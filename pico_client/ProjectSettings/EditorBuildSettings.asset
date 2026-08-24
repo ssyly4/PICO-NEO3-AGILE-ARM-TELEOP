@@ -1,0 +1,15 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/PicoControllerProbe.unity
+    guid: a8a6be08ae7735ef2aa2e7bcb800ef90
+  m_configObjects:
+    com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 9973bc81f1b1f069db202d11300a4c93, type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 1438ad82a5c12b8e69b8a468bd1da181, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 23ac897dc452144788c881e7e677749c, type: 2}
+  m_UseUCBPForAssetBundles: 0

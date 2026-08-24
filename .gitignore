@@ -1,0 +1,39 @@
+# Robot datasets, rollouts, diagnostics, and local output
+/data
+/artifacts/*
+!/artifacts/README.md
+*.log
+*.jsonl
+*.mp4
+
+# Python environments and caches
+/.venv/
+/**/.venv/
+/**/.venv-*/
+/**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Unity generated files
+/pico_client/LocalPackages/
+/**/[Ll]ibrary/
+/**/[Tt]emp/
+/**/[Oo]bj/
+/**/[Ll]ogs/
+/**/[Uu]ser[Ss]ettings/
+/**/.utmp/
+/**/*.csproj
+/**/*.sln
+/**/*.user
+
+# Local credentials and editor state
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+.DS_Store
+core
+core.*

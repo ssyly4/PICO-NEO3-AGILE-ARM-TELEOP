@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nero-neo-teleop"
+version = "0.1.0"
+description = "PICO Neo 3 bimanual teleoperation and LeRobot data collection for NERO arms"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "ruff>=0.6",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = ["pico_client"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]

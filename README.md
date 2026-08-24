@@ -147,5 +147,5 @@ This is a research prototype validated on a specific dual-NERO installation.
 Home poses, CAN topology, URDF location, cameras, and force thresholds are
 hardware-specific and must be calibrated. It is not a certified safety system.
 
-The repository's original source is licensed under MIT. External PICO SDK
+The repository's original source is licensed under Apache-2.0. External PICO SDK
 components retain their upstream license and are not distributed here.

@@ -122,5 +122,5 @@ pico_client/LocalPackages/com.unity.xr.openxr.picoxr/
 这是在特定双 NERO 平台上验证的研究原型，不是认证安全系统。Home、CAN 拓扑、
 URDF、相机和接触力阈值均与硬件有关，换设备后必须重新标定。
 
-本项目原创代码采用 MIT 许可证；外部 PICO SDK 遵循其上游许可证且不随本仓库
+本项目原创代码采用 Apache-2.0 许可证；外部 PICO SDK 遵循其上游许可证且不随本仓库
 分发。

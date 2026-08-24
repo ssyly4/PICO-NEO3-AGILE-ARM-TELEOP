@@ -7,7 +7,7 @@ name = "nero-neo-teleop"
 version = "0.1.0"
 description = "PICO Neo 3 bimanual teleoperation and LeRobot data collection for NERO arms"
 readme = "README.md"
-license = { text = "MIT" }
+license = "Apache-2.0"
 requires-python = ">=3.11"
 dependencies = [
   "numpy>=1.26",

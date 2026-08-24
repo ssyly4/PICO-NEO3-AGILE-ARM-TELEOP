@@ -1,5 +1,8 @@
 NERO Neo Teleoperation
 Copyright 2026 NERO Neo Teleoperation contributors
 
+Licensed under the Apache License, Version 2.0. You may obtain a copy at
+https://www.apache.org/licenses/LICENSE-2.0
+
 PICO Unity OpenXR SDK is an external dependency. It is not distributed in this
 repository and remains subject to PICO Technology Co., Ltd.'s license terms.

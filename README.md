@@ -23,7 +23,7 @@ commands through the NERO CPV interface.
 ## Architecture
 
 ```text
-PICO controllers (OpenXR, 72 Hz)
+PICO controllers (OpenXR; UDP sender nominally 60 Hz)
         | UDP :50150
         v
 PICO input + coordinate mapper
@@ -66,12 +66,16 @@ and are not vendored here.
 ## Setup
 
 ```bash
-git clone <repository-url> nero_neo_teleop
+git clone https://github.com/ssyly4/PICO-NEO3-AGILE-ARM-TELEOP.git nero_neo_teleop
 cd nero_neo_teleop
 cp .env.example .env
 # Edit .env for your SDK, CAN USB paths, cameras, and PICO host address.
 python3 -m pip install -e .
 ```
+
+This installs the local Python package, not the external NERO SDK, Pinocchio,
+LeRobot environment, or PICO OpenXR package. Follow the
+[handoff checklist](docs/HANDOFF.zh-CN.md) before operating hardware.
 
 Find persistent devices before editing `.env`:
 
@@ -114,6 +118,11 @@ Start one-arm or two-arm teleoperation:
 ./scripts/control/run_servo_v3_experiment.sh --duration 120 --execute
 ./scripts/control/run_dual_servo_v3_experiment.sh --duration 120 --execute
 ```
+
+The single-arm launcher defaults to the configured right arm. `--can-port`
+selects the corresponding left/right Home and PICO controller; unconfigured
+interfaces are rejected before motion. Preview Home separately before using
+`--execute`.
 
 Controls: hold **Grip** to clutch and move an arm, release it to hold and
 re-anchor, and use **Trigger** for the gripper.

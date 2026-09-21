@@ -9,11 +9,19 @@ PYTHON="$NERO_TELEOP_PYTHON"
 
 left_can="${PICO_LEFT_CAN_PORT:-can_left}"
 right_can="${PICO_RIGHT_CAN_PORT:-can_right}"
-left_usb_bus="${PICO_LEFT_CAN_USB_BUS:-1-2.3:1.0}"
+left_usb_bus="${PICO_LEFT_CAN_USB_BUS:-1-2.2:1.0}"
 right_usb_bus="${PICO_RIGHT_CAN_USB_BUS:-3-1.2:1.0}"
 translation_scale="${PICO_TRANSLATION_SCALE:-0.80}"
-max_velocity_deg_s="${PICO_MAX_VELOCITY_DEG_S:-32}"
-max_acceleration_deg_s2="${PICO_MAX_ACCELERATION_DEG_S2:-220}"
+position_gain_s="${PICO_POSITION_GAIN_S:-10}"
+rotation_gain_s="${PICO_ROTATION_GAIN_S:-10}"
+max_linear_speed_mm_s="${PICO_MAX_LINEAR_SPEED_MM_S:-200}"
+max_angular_speed_deg_s="${PICO_MAX_ANGULAR_SPEED_DEG_S:-150}"
+max_velocity_deg_s="${PICO_MAX_VELOCITY_DEG_S:-35}"
+max_acceleration_deg_s2="${PICO_MAX_ACCELERATION_DEG_S2:-300}"
+max_command_lead_deg="${PICO_MAX_COMMAND_LEAD_DEG:-2.50}"
+max_cpv_step_deg="${PICO_MAX_CPV_STEP_DEG:-0.95}"
+max_position_lead_mm="${PICO_MAX_EXECUTABLE_POSITION_LEAD_MM:-50}"
+max_rotation_lead_deg="${PICO_MAX_EXECUTABLE_ROTATION_LEAD_DEG:-16}"
 action_socket_dir="${NERO_ACTION_SOCKET_DIR:-}"
 
 if [[ "$left_can" == "$right_can" || "$left_usb_bus" == "$right_usb_bus" ]]; then
@@ -142,24 +150,24 @@ common_args=(
   --max-rotation-deg 40
   --position-filter-hz 10
   --rotation-filter-hz 15
-  --position-gain-s 8
-  --rotation-gain-s 8
-  --max-linear-speed-mm-s 160
-  --max-angular-speed-deg-s 120
+  --position-gain-s "$position_gain_s"
+  --rotation-gain-s "$rotation_gain_s"
+  --max-linear-speed-mm-s "$max_linear_speed_mm_s"
+  --max-angular-speed-deg-s "$max_angular_speed_deg_s"
   --max-velocity-deg-s "$max_velocity_deg_s"
   --max-acceleration-deg-s2 "$max_acceleration_deg_s2"
   --command-lead-ms 67
-  --max-command-lead-deg 1.80
-  --max-cpv-step-deg 0.85
+  --max-command-lead-deg "$max_command_lead_deg"
+  --max-cpv-step-deg "$max_cpv_step_deg"
   --nullspace-gain-s 0.30
   --orientation-limit-soft-margin-deg 12
   --orientation-limit-hard-margin-deg 3
-  --max-executable-position-lead-mm 35
-  --max-executable-rotation-lead-deg 12
+  --max-executable-position-lead-mm "$max_position_lead_mm"
+  --max-executable-rotation-lead-deg "$max_rotation_lead_deg"
   --grip-engage-threshold 0.30
   --grip-release-threshold 0.10
   --max-packet-age-ms 120
-  --network-prediction-ms 250
+  --network-prediction-ms 120
   --clutch-reset-gap-ms 500
   --gripper-open-width-mm 90
   --gripper-closed-width-mm 0
@@ -167,6 +175,8 @@ common_args=(
   --invert-forward
   --invert-lateral
 )
+
+echo "[control] fast collection profile: joint=${max_velocity_deg_s}deg/s accel=${max_acceleration_deg_s2}deg/s^2 cartesian=${max_linear_speed_mm_s}mm/s/${max_angular_speed_deg_s}deg/s lead=${max_command_lead_deg}deg/${max_position_lead_mm}mm"
 
 left_output="$NERO_TELEOP_ARTIFACTS_DIR/logs/servo_v3_dual/left"
 right_output="$NERO_TELEOP_ARTIFACTS_DIR/logs/servo_v3_dual/right"

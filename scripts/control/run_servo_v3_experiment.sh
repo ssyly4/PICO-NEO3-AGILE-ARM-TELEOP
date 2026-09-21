@@ -8,21 +8,28 @@ CAN_DIR="$PROJECT_ROOT/scripts/can"
 PYTHON="$NERO_TELEOP_PYTHON"
 
 can_port="${PICO_CAN_PORT:-$PICO_RIGHT_CAN_PORT}"
-can_usb_bus="${PICO_CAN_USB_BUS:-$PICO_RIGHT_CAN_USB_BUS}"
-max_velocity_deg_s="${PICO_MAX_VELOCITY_DEG_S:-32}"
-max_acceleration_deg_s2="${PICO_MAX_ACCELERATION_DEG_S2:-220}"
+max_velocity_deg_s="${PICO_MAX_VELOCITY_DEG_S:-35}"
+max_acceleration_deg_s2="${PICO_MAX_ACCELERATION_DEG_S2:-300}"
 translation_scale="${PICO_TRANSLATION_SCALE:-0.50}"
 rotation_scale="${PICO_ROTATION_SCALE:-1.25}"
-position_gain_s="${PICO_POSITION_GAIN_S:-8}"
-rotation_gain_s="${PICO_ROTATION_GAIN_S:-8}"
-max_linear_speed_mm_s="${PICO_MAX_LINEAR_SPEED_MM_S:-160}"
-max_angular_speed_deg_s="${PICO_MAX_ANGULAR_SPEED_DEG_S:-120}"
+position_gain_s="${PICO_POSITION_GAIN_S:-10}"
+rotation_gain_s="${PICO_ROTATION_GAIN_S:-10}"
+max_linear_speed_mm_s="${PICO_MAX_LINEAR_SPEED_MM_S:-200}"
+max_angular_speed_deg_s="${PICO_MAX_ANGULAR_SPEED_DEG_S:-150}"
+max_command_lead_deg="${PICO_MAX_COMMAND_LEAD_DEG:-2.50}"
+max_cpv_step_deg="${PICO_MAX_CPV_STEP_DEG:-0.95}"
+max_position_lead_mm="${PICO_MAX_EXECUTABLE_POSITION_LEAD_MM:-50}"
+max_rotation_lead_deg="${PICO_MAX_EXECUTABLE_ROTATION_LEAD_DEG:-16}"
 
 # The launcher must use the same interface name as the Python process during
 # CAN preparation, Home, and the post-Home handoff.
 arguments=("$@")
+show_selection=false
 for ((index = 0; index < ${#arguments[@]}; index++)); do
   case "${arguments[index]}" in
+    --show-selection)
+      show_selection=true
+      ;;
     --can-port)
       if ((index + 1 >= ${#arguments[@]})); then
         echo "[FAIL] --can-port requires an interface name" >&2
@@ -36,6 +43,25 @@ for ((index = 0; index < ${#arguments[@]}; index++)); do
       ;;
   esac
 done
+
+if [[ "$can_port" == "$PICO_LEFT_CAN_PORT" ]]; then
+  hand=left
+  home_side=left
+  expected_usb_bus="$PICO_LEFT_CAN_USB_BUS"
+elif [[ "$can_port" == "$PICO_RIGHT_CAN_PORT" ]]; then
+  hand=right
+  home_side=right
+  expected_usb_bus="$PICO_RIGHT_CAN_USB_BUS"
+else
+  echo "[FAIL] ${can_port} is not a configured left or right CAN interface" >&2
+  exit 2
+fi
+can_usb_bus="${PICO_CAN_USB_BUS:-$expected_usb_bus}"
+if [[ "$show_selection" == true ]]; then
+  printf 'can=%s usb=%s hand=%s home=%s\n' \
+    "$can_port" "$can_usb_bus" "$hand" "$home_side"
+  exit 0
+fi
 
 follower_traffic_ready() {
   "$NERO_TELEOP_PYTHON" -B -c \
@@ -68,10 +94,10 @@ for argument in "$@"; do
 done
 
 if [[ "$execute_requested" == true && "${PICO_SKIP_HOME:-0}" != "1" ]]; then
-  echo "[home] returning ${can_port} to the captured left-arm PICO Home"
+  echo "[home] returning ${can_port} to the ${home_side}-arm PICO Home"
   "$PYTHON" -m nero_neo_teleop.robot.single_home \
     --can-port "$can_port" \
-    --home-side left \
+    --home-side "$home_side" \
     --speed-percent 5 \
     --execute \
     --confirm 'MOVE NERO ARM TO PICO HOME'
@@ -96,7 +122,7 @@ fi
 
 exec "$PYTHON" -m nero_neo_teleop.control.servo_v3_controller \
   --can-port "$can_port" \
-  --hand right \
+  --hand "$hand" \
   --duration 120 \
   --rate-hz 40 \
   --translation-scale "$translation_scale" \
@@ -112,17 +138,17 @@ exec "$PYTHON" -m nero_neo_teleop.control.servo_v3_controller \
   --max-velocity-deg-s "$max_velocity_deg_s" \
   --max-acceleration-deg-s2 "$max_acceleration_deg_s2" \
   --command-lead-ms 67 \
-  --max-command-lead-deg 1.80 \
-  --max-cpv-step-deg 0.85 \
+  --max-command-lead-deg "$max_command_lead_deg" \
+  --max-cpv-step-deg "$max_cpv_step_deg" \
   --nullspace-gain-s 0.30 \
   --orientation-limit-soft-margin-deg 12 \
   --orientation-limit-hard-margin-deg 3 \
-  --max-executable-position-lead-mm 35 \
-  --max-executable-rotation-lead-deg 12 \
+  --max-executable-position-lead-mm "$max_position_lead_mm" \
+  --max-executable-rotation-lead-deg "$max_rotation_lead_deg" \
   --grip-engage-threshold 0.30 \
   --grip-release-threshold 0.10 \
   --max-packet-age-ms 120 \
-  --network-prediction-ms 250 \
+  --network-prediction-ms 120 \
   --clutch-reset-gap-ms 500 \
   --gripper-open-width-mm 90 \
   --gripper-closed-width-mm 0 \

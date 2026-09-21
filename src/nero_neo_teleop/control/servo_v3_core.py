@@ -259,6 +259,8 @@ class PinocchioVelocityServo:
         q: np.ndarray,
         target_position: np.ndarray,
         target_rotation: np.ndarray,
+        *,
+        linear_feedforward_local_m_s: np.ndarray | None = None,
     ) -> CartesianServoResult:
         joints = self._joints(q)
         target_position = np.asarray(target_position, dtype=np.float64)
@@ -270,9 +272,22 @@ class PinocchioVelocityServo:
         target = pin.SE3(target_rotation, target_position)
         current_to_target = current.actInv(target)
         pose_error = pin.log6(current_to_target).vector
+        if linear_feedforward_local_m_s is None:
+            linear_feedforward = np.zeros(3, dtype=np.float64)
+        else:
+            linear_feedforward = np.asarray(
+                linear_feedforward_local_m_s, dtype=np.float64
+            )
+            if linear_feedforward.shape != (3,) or not np.isfinite(
+                linear_feedforward
+            ).all():
+                raise ValueError(
+                    "linear_feedforward_local_m_s must contain three finite values"
+                )
         task_velocity = pose_error.copy()
         task_velocity[:3] = self._clamp_norm(
-            self.position_gain_s * task_velocity[:3], self.max_linear_speed_m_s
+            self.position_gain_s * task_velocity[:3] + linear_feedforward,
+            self.max_linear_speed_m_s,
         )
         task_velocity[3:] = self._clamp_norm(
             self.rotation_gain_s * task_velocity[3:], self.max_angular_speed_rad_s

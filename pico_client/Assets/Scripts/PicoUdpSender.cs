@@ -17,6 +17,7 @@ public sealed class PicoUdpSender : MonoBehaviour
     private IPEndPoint destination;
     private Thread senderThread;
     private volatile bool senderRunning;
+    private AndroidJavaObject wifiLock;
     private long sequence;
     private readonly byte[] binaryPayload = new byte[244];
     private readonly byte[] stateSnapshot = new byte[216];
@@ -38,8 +39,19 @@ public sealed class PicoUdpSender : MonoBehaviour
 
         client = new UdpClient();
         client.EnableBroadcast = destinationHost == "255.255.255.255" || destinationHost.EndsWith(".255");
+        try
+        {
+            // Expedited forwarding (DSCP EF) where the access point supports WMM/QoS.
+            client.Client.SetSocketOption(
+                SocketOptionLevel.IP, SocketOptionName.TypeOfService, 0xb8);
+        }
+        catch (SocketException exception)
+        {
+            Debug.LogWarning($"NERO_UDP_QOS_UNAVAILABLE {exception.SocketErrorCode}");
+        }
         destination = new IPEndPoint(IPAddress.Parse(destinationHost), destinationPort);
         Application.runInBackground = true;
+        AcquireHighPerformanceWifiLock();
         monotonicClock.Start();
         senderRunning = true;
         senderThread = new Thread(SenderLoop)
@@ -225,6 +237,54 @@ public sealed class PicoUdpSender : MonoBehaviour
             / System.Diagnostics.Stopwatch.Frequency;
     }
 
+    private void AcquireHighPerformanceWifiLock()
+    {
+#if UNITY_ANDROID && !UNITY_EDITOR
+        try
+        {
+            using var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+            using AndroidJavaObject activity =
+                unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+            using AndroidJavaObject wifiManager =
+                activity.Call<AndroidJavaObject>("getSystemService", "wifi");
+            wifiLock = wifiManager.Call<AndroidJavaObject>(
+                "createWifiLock", 3, "nero-pico-control-stream");
+            wifiLock.Call("setReferenceCounted", false);
+            wifiLock.Call("acquire");
+            Debug.Log("NERO_WIFI_HIGH_PERF_LOCK acquired");
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning($"NERO_WIFI_HIGH_PERF_LOCK unavailable: {exception.Message}");
+            wifiLock?.Dispose();
+            wifiLock = null;
+        }
+#endif
+    }
+
+    private void ReleaseHighPerformanceWifiLock()
+    {
+#if UNITY_ANDROID && !UNITY_EDITOR
+        if (wifiLock == null)
+        {
+            return;
+        }
+        try
+        {
+            if (wifiLock.Call<bool>("isHeld"))
+            {
+                wifiLock.Call("release");
+            }
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning($"NERO_WIFI_HIGH_PERF_LOCK release failed: {exception.Message}");
+        }
+        wifiLock.Dispose();
+        wifiLock = null;
+#endif
+    }
+
     private void OnDestroy()
     {
         senderRunning = false;
@@ -232,5 +292,6 @@ public sealed class PicoUdpSender : MonoBehaviour
         senderThread = null;
         client?.Close();
         client = null;
+        ReleaseHighPerformanceWifiLock();
     }
 }

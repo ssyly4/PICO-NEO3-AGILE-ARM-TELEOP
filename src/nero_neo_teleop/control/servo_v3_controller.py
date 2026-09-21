@@ -105,6 +105,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rotation-filter-hz", type=float, default=8.0)
     parser.add_argument("--position-gain-s", type=float, default=6.0)
     parser.add_argument("--rotation-gain-s", type=float, default=4.0)
+    parser.add_argument(
+        "--translation-feedforward-gain",
+        type=float,
+        default=0.0,
+        help=(
+            "gain applied to filtered Cartesian target velocity; 0 preserves the "
+            "legacy position-error-only servo"
+        ),
+    )
     parser.add_argument("--max-linear-speed-mm-s", type=float, default=120.0)
     parser.add_argument("--max-angular-speed-deg-s", type=float, default=60.0)
     parser.add_argument("--max-velocity-deg-s", type=float, default=15.0)
@@ -158,6 +167,8 @@ def parse_args() -> argparse.Namespace:
         parser.error("command-lead-ms must be in [10, 100]")
     if not args.max_packet_age_ms <= args.network_prediction_ms <= 300.0:
         parser.error("network-prediction-ms must be in [max-packet-age-ms, 300]")
+    if not 0.0 <= args.translation_feedforward_gain <= 1.0:
+        parser.error("translation-feedforward-gain must be in [0, 1]")
     if args.force_calibration_sec <= 0.0 or args.force_filter_hz <= 0.0:
         parser.error("force calibration and filter parameters must be positive")
     if args.downward_force_guard_n < 0.0:
@@ -266,6 +277,7 @@ def main() -> None:
             rotation_cutoff_hz=args.rotation_filter_hz,
         )
         pose_filter.reset(initial_pose.position, initial_pose.rotation)
+        previous_filtered_position = initial_pose.position.copy()
         command_follower = FiniteLeadCommandFollower(
             7,
             max_velocity_rad_s=np.deg2rad(args.max_velocity_deg_s),
@@ -402,6 +414,7 @@ def main() -> None:
             cartesian_limited = False
             target_debt_position_mm = 0.0
             target_debt_orientation_deg = 0.0
+            linear_feedforward_local = np.zeros(3, dtype=np.float64)
 
             if fresh or predicted_input:
                 effective_hand_state = hand_state
@@ -433,6 +446,7 @@ def main() -> None:
                         mapper.reset_target(measured_pose)
                         world_to_view = None
                         pose_filter.reset(measured_pose.position, measured_pose.rotation)
+                        previous_filtered_position = measured_pose.position.copy()
                         command_follower.reset()
                     elif state in {"clutch_engaged", "tracking"}:
                         filtered_position, filtered_rotation = pose_filter.update(
@@ -461,13 +475,28 @@ def main() -> None:
                         )
                         filtered_position = executable.position
                         filtered_rotation = executable.rotation
+                        if state == "tracking":
+                            target_velocity_world = (
+                                filtered_position - previous_filtered_position
+                            ) / dt
+                            linear_feedforward_local = (
+                                args.translation_feedforward_gain
+                                * measured_pose.rotation.T
+                                @ target_velocity_world
+                            )
+                        previous_filtered_position = filtered_position.copy()
                         cartesian_limited = executable.limited
                         target_debt_position_mm = executable.position_debt_mm
                         target_debt_orientation_deg = executable.orientation_debt_deg
                         if executable.limited:
                             pose_filter.reset(filtered_position, filtered_rotation)
                         solve_started = time.perf_counter()
-                        ik = servo.solve(measured, filtered_position, filtered_rotation)
+                        ik = servo.solve(
+                            measured,
+                            filtered_position,
+                            filtered_rotation,
+                            linear_feedforward_local_m_s=linear_feedforward_local,
+                        )
                         ik_ms = 1000.0 * (time.perf_counter() - solve_started)
                         desired_velocity = ik.joint_velocity
                         state = "network_predict" if predicted_input else "velocity_tracking"
@@ -481,6 +510,7 @@ def main() -> None:
                     mapper.reset_target(measured_pose)
                     world_to_view = None
                     pose_filter.reset(measured_pose.position, measured_pose.rotation)
+                    previous_filtered_position = measured_pose.position.copy()
                     command_follower.reset()
                     state = "network_reset"
 
@@ -545,6 +575,9 @@ def main() -> None:
                     "cartesian_limited": cartesian_limited,
                     "target_debt_position_mm": target_debt_position_mm,
                     "target_debt_orientation_deg": target_debt_orientation_deg,
+                    "translation_feedforward_mm_s": (
+                        1000.0 * float(np.linalg.norm(linear_feedforward_local))
+                    ),
                     "command_lead_deg": followed.command_lead_deg,
                     "lead_limited": followed.lead_limited,
                     "transport_limited": transport_limited,

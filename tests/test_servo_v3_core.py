@@ -27,6 +27,47 @@ class VelocityServoTests(unittest.TestCase):
         result = self.servo.solve(self.q, pose.translation, pose.rotation)
         self.assertLess(np.max(np.abs(result.joint_velocity)), 1e-9)
 
+    def test_translation_feedforward_moves_at_zero_position_error(self):
+        pose = self.servo.pose(self.q)
+        requested = np.array([0.03, -0.01, 0.0])
+        result = self.servo.solve(
+            self.q,
+            pose.translation,
+            pose.rotation,
+            linear_feedforward_local_m_s=requested,
+        )
+        jacobian = pin.computeFrameJacobian(
+            self.servo.model,
+            self.servo.data,
+            self.q,
+            self.servo.frame_id,
+            pin.ReferenceFrame.LOCAL,
+        )
+        achieved = jacobian @ result.joint_velocity
+        np.testing.assert_allclose(achieved[:3], requested, atol=2e-4)
+        self.assertGreater(np.linalg.norm(result.joint_velocity), 1e-4)
+
+    def test_translation_feedforward_obeys_cartesian_speed_limit(self):
+        pose = self.servo.pose(self.q)
+        requested = np.array([10.0, 0.0, 0.0])
+        result = self.servo.solve(
+            self.q,
+            pose.translation,
+            pose.rotation,
+            linear_feedforward_local_m_s=requested,
+        )
+        jacobian = pin.computeFrameJacobian(
+            self.servo.model,
+            self.servo.data,
+            self.q,
+            self.servo.frame_id,
+            pin.ReferenceFrame.LOCAL,
+        )
+        achieved = jacobian @ result.joint_velocity
+        self.assertLessEqual(
+            np.linalg.norm(achieved[:3]), self.servo.max_linear_speed_m_s + 2e-4
+        )
+
     def test_velocity_integration_reduces_cartesian_error(self):
         start = self.servo.pose(self.q)
         target = start.translation + np.array([0.012, -0.006, 0.004])

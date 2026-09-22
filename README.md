@@ -133,6 +133,9 @@ re-anchor, and use **Trigger** for the gripper.
 
 ```bash
 ./scripts/recording/run_bimanual_record.sh --workflow fullflow
+
+# Single-right-arm bottle demonstrations (preview unless --execute is supplied)
+./scripts/recording/run_right_bottle_record.sh
 ```
 
 Available workflows are `custom`, `fullflow`, `stage1`, and `stage23`. Press
@@ -140,6 +143,11 @@ Enter to prepare an episode; recording starts after motion detection. The
 recorder stops according to the selected workflow, returns both arms Home, and
 then asks whether to save or discard the attempt. Datasets are written outside
 the repository to `NERO_BIMANUAL_DATA_DIR`.
+
+The single-right-arm entry delegates to the separately maintained managed
+recorder selected by `NERO_RIGHT_RECORDER_ROOT`; it records controller commands
+and writes data outside this repository. Dataset conversion and training belong
+to the separate `nero_vla_training` project.
 
 ## Validation
 

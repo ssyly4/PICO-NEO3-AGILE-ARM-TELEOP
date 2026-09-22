@@ -125,11 +125,18 @@ pico_client/LocalPackages/com.unity.xr.openxr.picoxr/
 
 ```bash
 ./scripts/recording/run_bimanual_record.sh --workflow fullflow
+
+# 单右臂抓瓶数采；不加 --execute 只预览
+./scripts/recording/run_right_bottle_record.sh
 ```
 
 支持 `custom`、`fullflow`、`stage1`、`stage23`。按 Enter 进入准备，检测到
 运动后才开始录制；脚本按工作流条件结束本集、双臂回位，再询问保存或丢弃。
 数据写入仓库外的 `NERO_BIMANUAL_DATA_DIR`。
+
+单右臂入口通过 `NERO_RIGHT_RECORDER_ROOT` 调用独立维护的托管录制器，action 使用
+实际发送的 controller command，数据同样写在仓库外。格式转换和模型训练属于独立的
+`nero_vla_training` 项目，不放在遥操仓库中。
 
 ## 当前边界
 

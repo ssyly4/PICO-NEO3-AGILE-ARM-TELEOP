@@ -8,7 +8,7 @@
 - `scripts/control/run_servo_v3_experiment.sh`：单臂 PICO Servo v3 控制；默认右臂。
 - `scripts/control/run_dual_servo_v3_experiment.sh`：双臂 PICO 控制。
 - `scripts/control/run_dual_home.sh`：双臂 Home，默认只预览。
-- `scripts/recording/run_bimanual_record.sh`：托管 LeRobot 数采；工作流为 `custom`、`fullflow`、`stage1` 或 `stage23`。
+- `scripts/recording/run_recording.sh`：配置驱动的通用双臂 LeRobot 数采入口。
 - `scripts/can/ensure_can_interface.sh`：按 USB 拓扑绑定稳定 CAN 名称。
 - `scripts/pico/build.sh`、`install_and_launch.sh`、`check_input.sh`：构建、安装和检查 PICO 客户端。
 

@@ -49,9 +49,9 @@ cd /home/dev/nero_neo_teleop
 前后、左右、上下和姿态方向后再运行双臂。自动 Home 本身是实机运动。
 数采前用相机实时画面确认 world、left_wrist、right_wrist 角色，不能仅靠
 `/dev/videoN` 编号；同时确认数据根目录、episode 目标数和 action 来源。
-正式数采入口为 `scripts/recording/run_bimanual_record.sh`，工作流和默认
-action 来源见该脚本及 `README.zh-CN.md`。数采文件存放在仓库外的
-`NERO_BIMANUAL_DATA_DIR`，运行日志存放在 `artifacts/`。
+正式数采入口为 `scripts/recording/run_recording.sh`，任务和 action 来源通过参数
+配置，具体见 `README.zh-CN.md`。数采文件存放在仓库外的
+`NERO_RECORD_DATA_DIR`，运行日志存放在 `artifacts/`。
 
 CAN/CPV 失联、反馈过期、非预期运动或接触异常时立即停止并检查日志；
 不要通过增大软件限位来掩盖故障。运行安全要求见 `SAFETY.md`。

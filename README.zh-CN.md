@@ -124,19 +124,24 @@ pico_client/LocalPackages/com.unity.xr.openxr.picoxr/
 ## 数据采集
 
 ```bash
-./scripts/recording/run_bimanual_record.sh --workflow fullflow
+./scripts/recording/run_recording.sh \
+  --task "任务自然语言描述" \
+  --dataset nero_demo_v1 \
+  --episodes 50 \
+  --auto-stop off
 
-# 单右臂抓瓶数采；不加 --execute 只预览
-./scripts/recording/run_right_bottle_record.sh
+# 确认预览后再执行
+./scripts/recording/run_recording.sh \
+  --task "任务自然语言描述" \
+  --dataset nero_demo_v1 \
+  --episodes 50 \
+  --auto-stop off \
+  --execute
 ```
 
-支持 `custom`、`fullflow`、`stage1`、`stage23`。按 Enter 进入准备，检测到
-运动后才开始录制；脚本按工作流条件结束本集、双臂回位，再询问保存或丢弃。
-数据写入仓库外的 `NERO_BIMANUAL_DATA_DIR`。
-
-单右臂入口通过 `NERO_RIGHT_RECORDER_ROOT` 调用独立维护的托管录制器，action 使用
-实际发送的 controller command，数据同样写在仓库外。格式转换和模型训练属于独立的
-`nero_vla_training` 项目，不放在遥操仓库中。
+所有任务共用这一个入口。任务文本、数据集名称、episode 数、action 来源、最长时长和
+自动停止方式均通过命令行或 `NERO_RECORD_*` 环境变量配置；不加 `--execute` 只打印
+最终配置。执行时按 Enter 准备，检测到运动后开始录制，每集结束后选择保存或丢弃。
 
 ## 当前边界
 
@@ -201,8 +206,7 @@ IK 的机器人模型和底层 SDK 依赖 `nero_ws` 提供的环境；本仓库�
 | `scripts/control/run_dual_home.sh` | 双臂 Home 预览/执行，执行需要授权 |
 | `scripts/control/run_servo_v3_experiment.sh` | 单臂 Servo v3 遥操 |
 | `scripts/control/run_dual_servo_v3_experiment.sh` | 双臂 Servo v3 遥操 |
-| `scripts/recording/run_bimanual_record.sh` | 托管双臂遥操、三相机采集、episode 保存/丢弃和回位 |
-| `scripts/recording/run_bimanual_record_tail_push.sh` | 后段铺巾/推巾专项数采 |
+| `scripts/recording/run_recording.sh` | 通用双臂遥操、三相机采集、episode 保存/丢弃和回位 |
 | `scripts/check.sh` | 运行仓库级检查和测试 |
 
 ### 4. 相机、反馈和数据边界
@@ -233,7 +237,7 @@ cd /home/dev/nero_neo_teleop
 数采时先检查三路相机、两路 CAN 和 PICO 输入，再运行：
 
 ```bash
-./scripts/recording/run_bimanual_record.sh --workflow fullflow
+./scripts/recording/run_recording.sh --task "任务描述" --dataset nero_demo_v1 --episodes 50 --execute
 ```
 
 录制频率是 30 Hz。每帧应包含三路图像、左右臂七关节反馈、夹爪反馈、时间戳以及实际

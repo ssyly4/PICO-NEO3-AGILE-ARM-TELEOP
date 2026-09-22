@@ -18,7 +18,7 @@ commands through the NERO CPV interface.
 - Pinocchio differential IK, pose filtering, finite command lead, and CPV guards
 - Analog gripper control and optional downward-force guard
 - Automatic SocketCAN binding and guarded dual-arm Home
-- Three-camera, dual-arm LeRobot v3 recording with resumable workflows
+- Configurable three-camera, dual-arm LeRobot v3 recording
 
 ## Architecture
 
@@ -132,22 +132,26 @@ re-anchor, and use **Trigger** for the gripper.
 ## Data Collection
 
 ```bash
-./scripts/recording/run_bimanual_record.sh --workflow fullflow
+./scripts/recording/run_recording.sh \
+  --task "your task instruction" \
+  --dataset nero_demo_v1 \
+  --episodes 50 \
+  --auto-stop off
 
-# Single-right-arm bottle demonstrations (preview unless --execute is supplied)
-./scripts/recording/run_right_bottle_record.sh
+# After checking the preview:
+./scripts/recording/run_recording.sh \
+  --task "your task instruction" \
+  --dataset nero_demo_v1 \
+  --episodes 50 \
+  --auto-stop off \
+  --execute
 ```
 
-Available workflows are `custom`, `fullflow`, `stage1`, and `stage23`. Press
-Enter to prepare an episode; recording starts after motion detection. The
-recorder stops according to the selected workflow, returns both arms Home, and
-then asks whether to save or discard the attempt. Datasets are written outside
-the repository to `NERO_BIMANUAL_DATA_DIR`.
-
-The single-right-arm entry delegates to the separately maintained managed
-recorder selected by `NERO_RIGHT_RECORDER_ROOT`; it records controller commands
-and writes data outside this repository. Dataset conversion and training belong
-to the separate `nero_vla_training` project.
+The same entry point is used for every task. Configure the task label, dataset
+name, episode count, action source, duration, and stop condition through its CLI
+or the `NERO_RECORD_*` environment variables. Without `--execute` it only prints
+the resolved plan. During execution, Enter prepares an episode, motion starts
+recording, and the operator chooses whether to save or discard each attempt.
 
 ## Validation
 

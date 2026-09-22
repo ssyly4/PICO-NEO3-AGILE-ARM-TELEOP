@@ -7,33 +7,100 @@ source "$SCRIPT_DIR/../common.sh"
 CAN_DIR="$PROJECT_ROOT/scripts/can"
 CONTROL_DIR="$PROJECT_ROOT/scripts/control"
 PYTHON="$NERO_LEROBOT_PYTHON"
-WORKFLOW="${NERO_BIMANUAL_WORKFLOW:-custom}"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  run_recording.sh --task TEXT --dataset NAME [options]
+
+Required:
+  --task TEXT                  Natural-language task label stored per frame.
+  --dataset NAME               Dataset directory/repo name.
+
+Options:
+  --episodes N                 Number of saved episodes (default: 10).
+  --data-root PATH             Parent directory for datasets.
+  --episode-seconds SEC        Maximum duration; 0 disables the limit.
+  --auto-stop MODE             dual, left, right, idle, or off.
+  --action-source SOURCE       controller_command or next_feedback.
+  --passive                    Do not manage teleop/Home subprocesses.
+  --execute                    Start cameras, CAN and robot processes.
+  --help                       Show this help.
+  -- ARGS...                   Additional recorder arguments.
+
+Robot, camera and controller settings are read from .env. Every option can
+also be supplied with the NERO_RECORD_* environment variables shown in
+.env.example.
+EOF
+}
+
+TASK="${NERO_RECORD_TASK:-}"
+DATASET_BASE="${NERO_RECORD_DATASET:-}"
+EPISODES="${NERO_RECORD_EPISODES:-10}"
+DATA_ROOT="${NERO_RECORD_DATA_DIR:-$HOME/nero_data/raw}"
+EPISODE_SECONDS="${NERO_RECORD_EPISODE_SECONDS:-0}"
+RELEASE_AUTO_STOP_MODE="${NERO_RECORD_AUTO_STOP:-off}"
+RELEASE_STATIONARY_SECONDS="${NERO_RECORD_STATIONARY_SECONDS:-0.5}"
+ACTION_SOURCE="${NERO_RECORD_ACTION_SOURCE:-controller_command}"
+MANAGED="${NERO_RECORD_MANAGED:-1}"
+RETURN_DELAY_SECONDS="${NERO_RECORD_RETURN_DELAY_SECONDS:-1}"
+RETURN_SPEED_PERCENT="${NERO_RECORD_RETURN_SPEED_PERCENT:-10}"
+execute=0
 passthrough=()
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
-    --workflow)
-      [[ "$#" -ge 2 ]] || { echo "[FAIL] --workflow requires a value" >&2; exit 2; }
-      WORKFLOW="$2"
+    --task|--dataset|--episodes|--data-root|--episode-seconds|--auto-stop|--action-source)
+      [[ "$#" -ge 2 ]] || { echo "[FAIL] $1 requires a value" >&2; exit 2; }
+      option="$1"
+      value="$2"
+      case "$option" in
+        --task) TASK="$value" ;;
+        --dataset) DATASET_BASE="$value" ;;
+        --episodes) EPISODES="$value" ;;
+        --data-root) DATA_ROOT="$value" ;;
+        --episode-seconds) EPISODE_SECONDS="$value" ;;
+        --auto-stop) RELEASE_AUTO_STOP_MODE="$value" ;;
+        --action-source) ACTION_SOURCE="$value" ;;
+      esac
       shift 2
       ;;
-    --workflow=*)
-      WORKFLOW="${1#--workflow=}"
+    --passive)
+      MANAGED=0
       shift
       ;;
-    *)
-      passthrough+=("$1")
+    --execute)
+      execute=1
       shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      passthrough+=("$@")
+      break
+      ;;
+    *)
+      echo "[FAIL] unknown option: $1" >&2
+      usage >&2
+      exit 2
       ;;
   esac
 done
 
-case "$WORKFLOW" in
-  custom|fullflow|stage1|stage23) ;;
-  *)
-    echo "[FAIL] unknown workflow '$WORKFLOW'; use custom, fullflow, stage1, or stage23" >&2
-    exit 2
-    ;;
-esac
+[[ -n "$TASK" ]] || { echo "[FAIL] --task is required" >&2; exit 2; }
+[[ -n "$DATASET_BASE" ]] || { echo "[FAIL] --dataset is required" >&2; exit 2; }
+[[ "$EPISODES" =~ ^[1-9][0-9]*$ ]] || { echo "[FAIL] --episodes must be positive" >&2; exit 2; }
+case "$RELEASE_AUTO_STOP_MODE" in dual|left|right|idle|off) ;; *)
+  echo "[FAIL] --auto-stop must be dual, left, right, idle, or off" >&2; exit 2;; esac
+case "$ACTION_SOURCE" in controller_command|next_feedback) ;; *)
+  echo "[FAIL] --action-source must be controller_command or next_feedback" >&2; exit 2;; esac
+if [[ ! "$RETURN_SPEED_PERCENT" =~ ^[0-9]+$ ]] \
+  || (( RETURN_SPEED_PERCENT < 1 || RETURN_SPEED_PERCENT > 10 )); then
+  echo "[FAIL] NERO_RECORD_RETURN_SPEED_PERCENT must be an integer in [1, 10]" >&2
+  exit 2
+fi
 
 LEFT_CAN="${PICO_LEFT_CAN_PORT:-can_left}"
 RIGHT_CAN="${PICO_RIGHT_CAN_PORT:-can_right}"
@@ -42,70 +109,22 @@ RIGHT_USB="${PICO_RIGHT_CAN_USB_BUS:-3-1.2:1.0}"
 WORLD_CAMERA="${NERO_WORLD_CAMERA:-}"
 LEFT_WRIST_CAMERA="${NERO_LEFT_WRIST_CAMERA:-}"
 RIGHT_WRIST_CAMERA="${NERO_RIGHT_WRIST_CAMERA:-}"
-DATA_ROOT="$NERO_BIMANUAL_DATA_DIR"
+controller_default="cd '$CONTROL_DIR' && PICO_SKIP_DUAL_HOME=1 ./run_dual_servo_v3_experiment.sh --duration 3600 --execute"
+
+echo "[record] task=$TASK"
+echo "[record] dataset=$DATA_ROOT/$DATASET_BASE episodes=$EPISODES"
+echo "[record] action_source=$ACTION_SOURCE auto_stop=$RELEASE_AUTO_STOP_MODE"
+if [[ "$execute" != 1 ]]; then
+  echo "[PREVIEW ONLY] add --execute to start cameras, CAN and robot processes"
+  exit 0
+fi
+
 for camera_var in WORLD_CAMERA LEFT_WRIST_CAMERA RIGHT_WRIST_CAMERA; do
   if [[ -z "${!camera_var}" ]]; then
     echo "[FAIL] ${camera_var} is unset; configure the corresponding NERO_* variable in .env" >&2
     exit 2
   fi
 done
-case "$WORKFLOW" in
-  fullflow)
-    DATASET_BASE="${NERO_BIMANUAL_DATASET_BASE:-nero_towel_fullflow_70_command_v1}"
-    EPISODES="${NERO_BIMANUAL_EPISODES:-70}"
-    TASK="${NERO_BIMANUAL_TASK:-fold the towel}"
-    RELEASE_AUTO_STOP_MODE="${NERO_BIMANUAL_RELEASE_AUTO_STOP_MODE:-idle}"
-    RELEASE_STATIONARY_SECONDS="${NERO_BIMANUAL_RELEASE_STATIONARY_SECONDS:-0.8}"
-    RETURN_DELAY_SECONDS="${NERO_BIMANUAL_RETURN_DELAY_SECONDS:-1}"
-    ACTION_SOURCE="${NERO_BIMANUAL_ACTION_SOURCE:-controller_command}"
-    controller_default="cd '$CONTROL_DIR' && PICO_SKIP_DUAL_HOME=1 ./run_dual_servo_v3_experiment.sh --duration 3600 --execute"
-    ;;
-  stage1)
-    DATASET_BASE="${NERO_BIMANUAL_DATASET_BASE:-nero_towel_stage1_reposition_50_v1}"
-    EPISODES="${NERO_BIMANUAL_EPISODES:-50}"
-    TASK="${NERO_BIMANUAL_TASK:-grasp the middle of the towel and place it at the staging position}"
-    RELEASE_AUTO_STOP_MODE="${NERO_BIMANUAL_RELEASE_AUTO_STOP_MODE:-right}"
-    RETURN_DELAY_SECONDS="${NERO_BIMANUAL_RETURN_DELAY_SECONDS:-0}"
-    ACTION_SOURCE="${NERO_BIMANUAL_ACTION_SOURCE:-next_feedback}"
-    export PICO_TRANSLATION_SCALE="${PICO_TRANSLATION_SCALE:-0.70}"
-    export PICO_ROTATION_SCALE="${PICO_ROTATION_SCALE:-1.20}"
-    export PICO_POSITION_GAIN_S="${PICO_POSITION_GAIN_S:-7}"
-    export PICO_ROTATION_GAIN_S="${PICO_ROTATION_GAIN_S:-7}"
-    export PICO_MAX_LINEAR_SPEED_MM_S="${PICO_MAX_LINEAR_SPEED_MM_S:-200}"
-    export PICO_MAX_ANGULAR_SPEED_DEG_S="${PICO_MAX_ANGULAR_SPEED_DEG_S:-150}"
-    export PICO_MAX_VELOCITY_DEG_S="${PICO_MAX_VELOCITY_DEG_S:-35}"
-    export PICO_MAX_ACCELERATION_DEG_S2="${PICO_MAX_ACCELERATION_DEG_S2:-300}"
-    controller_default="cd '$CONTROL_DIR' && PICO_CAN_USB_BUS='$RIGHT_USB' PICO_SKIP_HOME=1 ./run_servo_v3_experiment.sh --can-port '$RIGHT_CAN' --duration 3600 --execute"
-    ;;
-  stage23)
-    DATASET_BASE="${NERO_BIMANUAL_DATASET_BASE:-nero_towel_stage23_fold_50_command_v1}"
-    EPISODES="${NERO_BIMANUAL_EPISODES:-50}"
-    TASK="${NERO_BIMANUAL_TASK:-grasp both sides of the towel from the staging position, fold it, and release it}"
-    RELEASE_AUTO_STOP_MODE="${NERO_BIMANUAL_RELEASE_AUTO_STOP_MODE:-dual}"
-    RETURN_DELAY_SECONDS="${NERO_BIMANUAL_RETURN_DELAY_SECONDS:-0}"
-    ACTION_SOURCE="${NERO_BIMANUAL_ACTION_SOURCE:-controller_command}"
-    controller_default="cd '$CONTROL_DIR' && PICO_SKIP_DUAL_HOME=1 ./run_dual_servo_v3_experiment.sh --duration 3600 --execute"
-    echo "[stage23] Prepare the towel in a valid stage-1 staging layout before each Enter."
-    ;;
-  custom)
-    DATASET_BASE="${NERO_BIMANUAL_DATASET_BASE:-nero_towel_bimanual}"
-    EPISODES="${NERO_BIMANUAL_EPISODES:-3}"
-    TASK="${NERO_BIMANUAL_TASK:-fold the towel}"
-    RELEASE_AUTO_STOP_MODE="${NERO_BIMANUAL_RELEASE_AUTO_STOP_MODE:-dual}"
-    RETURN_DELAY_SECONDS="${NERO_BIMANUAL_RETURN_DELAY_SECONDS:-1}"
-    ACTION_SOURCE="${NERO_BIMANUAL_ACTION_SOURCE:-next_feedback}"
-    controller_default="cd '$CONTROL_DIR' && PICO_SKIP_DUAL_HOME=1 ./run_dual_servo_v3_experiment.sh --duration 3600 --execute"
-    ;;
-esac
-RELEASE_STATIONARY_SECONDS="${RELEASE_STATIONARY_SECONDS:-${NERO_BIMANUAL_RELEASE_STATIONARY_SECONDS:-0.5}}"
-EPISODE_SECONDS="${NERO_BIMANUAL_EPISODE_SECONDS:-0}"
-MANAGED="${NERO_BIMANUAL_MANAGED:-1}"
-RETURN_SPEED_PERCENT="${NERO_BIMANUAL_RETURN_SPEED_PERCENT:-10}"
-if [[ ! "$RETURN_SPEED_PERCENT" =~ ^[0-9]+$ ]] \
-  || (( RETURN_SPEED_PERCENT < 1 || RETURN_SPEED_PERCENT > 10 )); then
-  echo "[FAIL] NERO_BIMANUAL_RETURN_SPEED_PERCENT must be an integer in [1, 10]" >&2
-  exit 2
-fi
 
 prepare_can() {
   local name="$1"
@@ -198,8 +217,8 @@ if [[ "$MANAGED" == 1 ]]; then
   "$CONTROL_DIR/run_dual_home.sh" \
     --execute \
     --confirm 'MOVE BOTH NERO ARMS TO COMMUNITY HOME'
-  controller_command="${NERO_BIMANUAL_CONTROLLER_COMMAND:-$controller_default}"
-  home_command="${NERO_BIMANUAL_HOME_COMMAND:-cd '$CONTROL_DIR' && ./run_dual_home.sh --speed-percent '$RETURN_SPEED_PERCENT' --execute --confirm 'MOVE BOTH NERO ARMS TO COMMUNITY HOME'}"
+  controller_command="${NERO_RECORD_CONTROLLER_COMMAND:-$controller_default}"
+  home_command="${NERO_RECORD_HOME_COMMAND:-cd '$CONTROL_DIR' && ./run_dual_home.sh --speed-percent '$RETURN_SPEED_PERCENT' --execute --confirm 'MOVE BOTH NERO ARMS TO COMMUNITY HOME'}"
   echo "[record] automatic return speed=${RETURN_SPEED_PERCENT}%"
   managed_args=(
     --managed-controller-command "$controller_command"

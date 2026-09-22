@@ -19,7 +19,7 @@
 在 `controller_command` 模式下，两侧控制器通过 Unix 数据报发布**已发送的受保护关节目标**及单调时间戳；
 录制器按时间匹配后写入 LeRobot v3 的 observation、action、图像、时间戳、任务与 episode 元数据。
 `controller_command` 是已发送命令，不等同于电机实际到达的位置；CAN 反馈另行记录。
-不同工作流的 action 来源见 `scripts/recording/run_bimanual_record.sh`。
+action 来源由 `scripts/recording/run_recording.sh` 的 `--action-source` 参数指定。
 
 ## 配置和项目边界
 

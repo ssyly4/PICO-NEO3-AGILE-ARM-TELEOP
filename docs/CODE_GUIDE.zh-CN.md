@@ -97,7 +97,7 @@ Grip 按下时记录手柄锚点与机器人 TCP 锚点；后续只使用相对�
 ## 6. 数采调用链
 
 ```text
-scripts/recording/run_bimanual_record.sh
+scripts/recording/run_recording.sh
   -> CAN 与相机预检
   -> 可选 run_dual_home.sh
   -> bimanual_lerobot_recorder.main()
@@ -112,7 +112,7 @@ scripts/recording/run_bimanual_record.sh
 
 每条记录包含三路图像、双臂关节和夹爪 observation、action、任务文本及时间信息。
 `controller_command` action 来自控制器已发送的受保护关节目标；它不是手柄原始目标，也不等于同一时刻的实测反馈。
-`next_feedback` 是遗留标签模式，具体默认值由工作流在 `run_bimanual_record.sh` 中决定。
+`next_feedback` 是兼容旧数据的标签模式；公开入口默认记录实际发送的 `controller_command`。
 
 ## 7. 配置来源与优先级
 

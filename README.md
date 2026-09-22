@@ -1,7 +1,5 @@
 # NERO Neo 遥操作系统
 
-简体中文 | [English](README.md)
-
 本项目为 AgileX NERO 七轴机械臂提供基于 PICO Neo 3 的双臂遥操作与
 LeRobot v3 数据采集能力。系统将 OpenXR 手柄位姿映射为末端笛卡尔目标，
 使用 Pinocchio 求解速度级 IK，再通过 NERO CPV 接口发送受保护的关节指令。

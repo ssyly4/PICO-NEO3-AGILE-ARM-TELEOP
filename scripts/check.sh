@@ -6,11 +6,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 
 "$NERO_TELEOP_PYTHON" -m compileall -q "$PROJECT_ROOT/src" "$PROJECT_ROOT/tests"
+"$NERO_LEROBOT_PYTHON" -m ruff check "$PROJECT_ROOT/src" "$PROJECT_ROOT/tests"
 for file in "$PROJECT_ROOT"/scripts/*.sh "$PROJECT_ROOT"/scripts/*/*.sh; do
   bash -n "$file"
 done
 
 "$NERO_TELEOP_PYTHON" -m unittest discover -s "$PROJECT_ROOT/tests" -p 'test_pose_mapper.py' -q
+"$NERO_TELEOP_PYTHON" -m unittest discover \
+  -s "$PROJECT_ROOT/tests" -p 'test_action_command_stream.py' -q
+"$NERO_TELEOP_PYTHON" -m unittest discover -s "$PROJECT_ROOT/tests" -p 'test_gripper.py' -q
 "$NERO_TELEOP_PYTHON" -m unittest discover -s "$PROJECT_ROOT/tests" -p 'test_dual_home_config.py' -q
 "$NERO_TELEOP_PYTHON" -m unittest discover -s "$PROJECT_ROOT/tests" -p 'test_servo_v3_core.py' -q
 "$NERO_LEROBOT_PYTHON" -m unittest discover \

@@ -6,7 +6,6 @@ import os
 
 import numpy as np
 
-
 LEFT_CAN = os.environ.get("PICO_LEFT_CAN_PORT", "can_left")
 RIGHT_CAN = os.environ.get("PICO_RIGHT_CAN_PORT", "can_right")
 LEFT_USB_BUS = os.environ.get("PICO_LEFT_CAN_USB_BUS", "1-2.2:1.0")

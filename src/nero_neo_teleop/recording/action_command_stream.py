@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-from collections import deque
-from dataclasses import dataclass
 import json
-from pathlib import Path
 import socket
 import threading
 import time
+from collections import deque
+from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
-
 
 PROTOCOL_VERSION = 1
 ARM_ACTION_DOF = 8

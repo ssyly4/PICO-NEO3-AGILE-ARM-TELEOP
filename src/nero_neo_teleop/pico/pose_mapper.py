@@ -5,7 +5,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-
 # Unity：+X 向右、+Y 向上、+Z 向前。
 # NERO 基坐标系：+X 向前、+Y 向左、+Z 向上。由于 Unity 使用左手系，
 # 该正交坐标变换的行列式为 -1。
@@ -277,7 +276,11 @@ class ClutchedPoseMapper:
             if axis_gain is None
             else np.asarray(axis_gain, dtype=np.float64)
         )
-        if self.axis_gain.shape != (3,) or not np.isfinite(self.axis_gain).all() or np.any(self.axis_gain <= 0):
+        if (
+            self.axis_gain.shape != (3,)
+            or not np.isfinite(self.axis_gain).all()
+            or np.any(self.axis_gain <= 0)
+        ):
             raise ValueError("axis_gain must contain three positive finite values")
         self.target = initial_target
         self.engaged = False

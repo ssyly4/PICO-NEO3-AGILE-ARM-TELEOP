@@ -4,29 +4,27 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
 import gc
 import json
-from pathlib import Path
 import signal
 import time
+from datetime import datetime
+from pathlib import Path
 
 import numpy as np
-from pyAgxArm import AgxArmFactory, ArmModel, NeroFW, create_agx_arm_config
-
-
 from nero_vla.cpv_backend import NeroCpvPositionBackend
 from nero_vla.dual_can import require_bridge_not_forwarding, require_can_role
+from pyAgxArm import AgxArmFactory, ArmModel, NeroFW, create_agx_arm_config
 
 from nero_neo_teleop.control.contact_force_guard import DownwardContactGuard, TcpForceEstimator
 from nero_neo_teleop.control.gripper import GripperAnalogController
 from nero_neo_teleop.control.servo_v3_core import (
-    bounded_pose_target,
-    bounded_transport_step,
-    extrapolate_controller_state,
     FiniteLeadCommandFollower,
     PinocchioVelocityServo,
     PoseLowPassFilter,
+    bounded_pose_target,
+    bounded_transport_step,
+    extrapolate_controller_state,
 )
 from nero_neo_teleop.pico.pico_input import PicoInputMonitor
 from nero_neo_teleop.pico.pose_mapper import (
@@ -588,7 +586,9 @@ def main() -> None:
                     "measured_tcp_position_m": measured_pose.position.tolist(),
                     "command_tcp_position_m": command_pose.translation.tolist(),
                     "filtered_target_position_m": filtered_position.tolist(),
-                    "filtered_target_quaternion_xyzw": matrix_to_quaternion(filtered_rotation).tolist(),
+                    "filtered_target_quaternion_xyzw": matrix_to_quaternion(
+                        filtered_rotation
+                    ).tolist(),
                     "pico_rx_hz": monitor.stream.rx_hz,
                     "pico_loss_percent": monitor.stream.loss_percent,
                 }

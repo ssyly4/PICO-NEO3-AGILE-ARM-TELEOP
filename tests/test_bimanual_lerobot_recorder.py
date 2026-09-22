@@ -1,17 +1,18 @@
-import time
-from pathlib import Path
 import tempfile
+import time
 import unittest
+from pathlib import Path
 
 import numpy as np
+from nero_vla.camera_reader import CameraFrame
 
+from nero_neo_teleop.recording.action_command_stream import ArmCommandPublisher, ArmCommandReceiver
 from nero_neo_teleop.recording.bimanual_lerobot_recorder import (
+    STATE_DOF,
     ArmState,
     BimanualSample,
     InactivityAutoStop,
-    NeroCanStateSource,
     SingleReleaseAutoStop,
-    STATE_DOF,
     SyntheticStateSource,
     controller_action,
     dataset_features,
@@ -20,8 +21,6 @@ from nero_neo_teleop.recording.bimanual_lerobot_recorder import (
     resolved_camera_device,
     validate_existing_dataset,
 )
-from nero_neo_teleop.recording.action_command_stream import ArmCommandPublisher, ArmCommandReceiver
-from nero_vla.camera_reader import CameraFrame
 
 
 def frame(sequence: int) -> CameraFrame:
@@ -103,7 +102,15 @@ class BimanualRecorderTest(unittest.TestCase):
         current_right = type(right)(right.vector.copy(), right.monotonic_ns, right.unix_ns)
         current_right.vector[0] = np.deg2rad(3.0)
         image = frame(0)
-        previous = BimanualSample(0, left, right, np.r_[left.vector, right.vector], image, image, image)
+        previous = BimanualSample(
+            0,
+            left,
+            right,
+            np.r_[left.vector, right.vector],
+            image,
+            image,
+            image,
+        )
         current = BimanualSample(
             100_000_000,
             left,

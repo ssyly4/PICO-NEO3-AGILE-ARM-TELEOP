@@ -15,6 +15,10 @@
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+/build/
+/dist/
+/*.egg-info/
+/src/*.egg-info/
 
 # Unity generated files
 /pico_client/LocalPackages/

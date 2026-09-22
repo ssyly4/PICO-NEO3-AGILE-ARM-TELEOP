@@ -9,8 +9,8 @@ from nero_neo_teleop.pico.pose_mapper import (
     HybridTranslationController,
     Pose,
     align_local_axis,
-    matrix_to_rotation_vector,
     head_yaw_world_to_view,
+    matrix_to_rotation_vector,
     quaternion_to_matrix,
     rotation_vector_to_matrix,
     transform_state_to_view,
@@ -243,7 +243,7 @@ class HybridTranslationTest(unittest.TestCase):
         self.controller.update(
             np.asarray([0.14, 0.0, 0.0]), feedback_position=np.zeros(3), dt=0.1
         )
-        before = self.controller.update(
+        self.controller.update(
             np.asarray([0.14, 0.0, 0.0]), feedback_position=np.zeros(3), dt=0.1
         )
         held = self.controller.update(

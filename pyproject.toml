@@ -9,9 +9,22 @@ description = "PICO Neo 3 bimanual teleoperation and LeRobot data collection for
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.11"
+keywords = ["robotics", "teleoperation", "openxr", "lerobot", "pico-neo-3"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering",
+]
 dependencies = [
   "numpy>=1.26",
 ]
+
+[project.urls]
+Documentation = "https://github.com/ssyly4/PICO-NEO3-AGILE-ARM-TELEOP/tree/main/docs"
+Issues = "https://github.com/ssyly4/PICO-NEO3-AGILE-ARM-TELEOP/issues"
+Repository = "https://github.com/ssyly4/PICO-NEO3-AGILE-ARM-TELEOP"
 
 [project.optional-dependencies]
 dev = [

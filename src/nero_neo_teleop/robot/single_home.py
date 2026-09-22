@@ -4,17 +4,15 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
 import json
-from pathlib import Path
 import time
+from datetime import datetime
+from pathlib import Path
 
 import numpy as np
-from pyAgxArm import AgxArmFactory, ArmModel, NeroFW, create_agx_arm_config
-
-
 from nero_vla.dual_can import require_bridge_not_forwarding, require_can_role
 from nero_vla.robot_config import NERO_CPV_JOINT_LIMIT_OVERRIDES_RAD
+from pyAgxArm import AgxArmFactory, ArmModel, NeroFW, create_agx_arm_config
 
 from nero_neo_teleop.robot.home_config import LEFT_HOME_RAD, RIGHT_HOME_RAD
 from nero_neo_teleop.robot.nero_io import (
@@ -24,7 +22,6 @@ from nero_neo_teleop.robot.nero_io import (
     wait_gripper_status,
 )
 from nero_neo_teleop.runtime import ARTIFACTS_DIR
-
 
 CONFIRMATION = "MOVE NERO ARM TO PICO HOME"
 

@@ -28,7 +28,7 @@ Home 覆盖值只可依据现场测量修改，不要照搬其他安装位置的
 ## 3. 无运动验证
 
 ```bash
-cd /home/dev/nero_neo_teleop
+cd /path/to/nero_neo_teleop
 ./scripts/check.sh
 ./scripts/control/run_servo_v3_experiment.sh --show-selection
 ./scripts/control/run_servo_v3_experiment.sh --can-port can_left --show-selection

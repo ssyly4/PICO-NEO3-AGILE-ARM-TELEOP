@@ -12,7 +12,6 @@ from typing import Any
 
 import numpy as np
 
-
 # 保留原始线协议标识，使已经安装的 Neo 3 APK 继续兼容；仓库和 Python API 则统一
 # 使用 PICO 命名。
 INPUT_SCHEMA = "nero.quest.input.v1"
@@ -287,7 +286,7 @@ class PicoInputMonitor:
         while not self._stop.is_set():
             try:
                 sample = self.stream.receive()
-            except socket.timeout:
+            except TimeoutError:
                 continue
             except OSError as exc:
                 if not self._stop.is_set():

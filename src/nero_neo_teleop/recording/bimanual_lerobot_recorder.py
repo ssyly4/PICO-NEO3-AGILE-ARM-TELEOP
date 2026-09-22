@@ -3,11 +3,8 @@
 from __future__ import annotations
 
 import argparse
-from collections import deque
-from dataclasses import dataclass
 import json
 import os
-from pathlib import Path
 import select
 import signal
 import socket
@@ -16,14 +13,17 @@ import subprocess
 import sys
 import threading
 import time
+from collections import deque
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Protocol
 
 import numpy as np
-
-
 from nero_vla.camera_reader import CameraFrame, SyntheticCameraReader, V4L2CameraReader
 from nero_vla.dual_can import require_can_role
+
 from nero_neo_teleop.recording.action_command_stream import ArmCommandReceiver
+
 ARM_DOF = 8
 STATE_DOF = 2 * ARM_DOF
 GRIPPER_OPEN_M = 0.09
@@ -34,8 +34,8 @@ STATE_NAMES = [*[f"left_{name}" for name in ARM_NAMES], *[f"right_{name}" for na
 class StateSource(Protocol):
     def start(self) -> None: ...
     def stop(self) -> None: ...
-    def wait_ready(self, timeout_sec: float = 5.0) -> "ArmState": ...
-    def snapshot(self, max_age_sec: float = 0.2) -> "ArmState": ...
+    def wait_ready(self, timeout_sec: float = 5.0) -> ArmState: ...
+    def snapshot(self, max_age_sec: float = 0.2) -> ArmState: ...
 
 
 @dataclass(frozen=True)
@@ -165,7 +165,10 @@ class NeroCanStateSource:
                 received_ns = time.monotonic_ns()
                 if frame_id in self.JOINT_FRAME_MAP:
                     indices = self.JOINT_FRAME_MAP[frame_id]
-                    raw = [int.from_bytes(payload[offset:offset + 4], "big", signed=True) for offset in (0, 4)]
+                    raw = [
+                        int.from_bytes(payload[offset : offset + 4], "big", signed=True)
+                        for offset in (0, 4)
+                    ]
                     with self._lock:
                         for value, index in zip(raw, indices):
                             self._joints[index] = np.deg2rad(value * 1e-3)
@@ -458,7 +461,11 @@ def controller_action(
     )
 
 
-def timing_record(index: int, observation: BimanualSample, action: BimanualAction) -> dict[str, Any]:
+def timing_record(
+    index: int,
+    observation: BimanualSample,
+    action: BimanualAction,
+) -> dict[str, Any]:
     tick = observation.scheduled_monotonic_ns
     return {
         "frame_index": index,
@@ -606,7 +613,9 @@ def stop_managed_controller(
 
 def require_managed_controller_alive(process: subprocess.Popen[str] | None) -> None:
     if process is not None and process.poll() is not None:
-        raise RuntimeError(f"Managed controller exited unexpectedly with status {process.returncode}")
+        raise RuntimeError(
+            f"Managed controller exited unexpectedly with status {process.returncode}"
+        )
 
 
 def run_home_command(command: str, timeout_sec: float) -> None:
@@ -667,7 +676,10 @@ def parse_args() -> argparse.Namespace:
         "--action-source",
         choices=("next_feedback", "controller_command"),
         default="next_feedback",
-        help="training action label source; controller_command records executed CPV/gripper targets",
+        help=(
+            "training action label source; controller_command records executed "
+            "CPV/gripper targets"
+        ),
     )
     parser.add_argument(
         "--action-socket-dir",
@@ -951,7 +963,14 @@ def main() -> None:
                     while True:
                         require_managed_controller_alive(controller)
                         wait_until(next_tick)
-                        current = take_sample(next_tick, left, right, world, left_wrist, right_wrist)
+                        current = take_sample(
+                            next_tick,
+                            left,
+                            right,
+                            world,
+                            left_wrist,
+                            right_wrist,
+                        )
                         armed.append(current)
                         if previous is not None:
                             speed = max_joint_speed_deg_s(previous, current)

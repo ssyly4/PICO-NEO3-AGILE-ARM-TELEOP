@@ -5,15 +5,28 @@ on:
   pull_request:
 
 jobs:
-  static:
+  public-validation:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
+          cache: pip
       - run: python -m pip install --upgrade pip
-      - run: python -m pip install .
-      - run: python -m compileall -q src tests
+      - run: python -m pip install '.[dev]'
+      - name: Ruff
+        run: ruff check src tests
+      - name: Python 编译检查
+        run: python -m compileall -q src tests
       - name: 检查 Shell 语法
         run: for file in scripts/*.sh scripts/*/*.sh; do bash -n "$file"; done
+      - name: 运行无专有 SDK 单元测试
+        run: |
+          python -m unittest discover -s tests -p 'test_pose_mapper.py' -q
+          python -m unittest discover -s tests -p 'test_action_command_stream.py' -q
+          python -m unittest discover -s tests -p 'test_gripper.py' -q

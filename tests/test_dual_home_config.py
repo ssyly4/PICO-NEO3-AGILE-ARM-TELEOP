@@ -1,12 +1,15 @@
 import unittest
-from pathlib import Path
 
 import numpy as np
 from trac_ik import TracIK
 
-from nero_neo_teleop.robot.home_config import LEFT_HOME_RAD, MAX_TCP_HEIGHT_MM, MIN_TCP_HEIGHT_MM, RIGHT_HOME_RAD
+from nero_neo_teleop.robot.home_config import (
+    LEFT_HOME_RAD,
+    MAX_TCP_HEIGHT_MM,
+    MIN_TCP_HEIGHT_MM,
+    RIGHT_HOME_RAD,
+)
 from nero_neo_teleop.runtime import NERO_URDF
-
 
 URDF = NERO_URDF
 

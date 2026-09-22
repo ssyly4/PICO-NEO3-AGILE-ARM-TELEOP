@@ -6,9 +6,9 @@ from dataclasses import dataclass
 import numpy as np
 
 
-# Unity: +X right, +Y up, +Z forward.
-# Candidate NERO base: +X forward, +Y left, +Z up. This orthogonal
-# coordinate conversion has determinant -1 because Unity is left-handed.
+# Unity：+X 向右、+Y 向上、+Z 向前。
+# NERO 基坐标系：+X 向前、+Y 向左、+Z 向上。由于 Unity 使用左手系，
+# 该正交坐标变换的行列式为 -1。
 OPENXR_TO_NERO = np.asarray(
     [
         [0.0, 0.0, 1.0],
@@ -173,7 +173,7 @@ def align_local_axis(
     *,
     local_axis: np.ndarray = np.asarray([1.0, 0.0, 0.0]),
 ) -> np.ndarray:
-    """Align one tool axis while retaining the reference twist about that axis."""
+    """对齐一根工具轴，同时保留参考姿态绕该轴的扭转角。"""
     reference = np.asarray(reference_rotation, dtype=np.float64)
     desired = np.asarray(desired_rotation, dtype=np.float64)
     axis = np.asarray(local_axis, dtype=np.float64).copy()
@@ -249,9 +249,8 @@ class ClutchedPoseMapper:
         max_translation_m: float = 0.03,
         max_rotation_rad: float = np.deg2rad(15.0),
         rotation_scale: float = 1.0,
-        # Grip is an analog controller signal.  Do not require a full squeeze
-        # to enter motion mode, but keep hysteresis so light noise cannot drop
-        # and immediately re-enter the clutch.
+        # Grip 是模拟量信号，不要求完全按下才进入运动模式；保留迟滞，防止轻微
+        # 噪声导致离合反复退出和重新进入。
         engage_threshold: float = 0.25,
         release_threshold: float = 0.12,
         basis: np.ndarray = OPENXR_TO_NERO,
@@ -286,7 +285,7 @@ class ClutchedPoseMapper:
         self.robot_anchor: Pose | None = None
 
     def reset_target(self, target: Pose) -> None:
-        """Disengage the clutch and make live robot feedback the next anchor."""
+        """断开离合，并在下次接合时使用机器人实时反馈作为锚点。"""
         self.target = target
         self.engaged = False
         self.controller_anchor = None
@@ -322,8 +321,8 @@ class ClutchedPoseMapper:
         if translation_norm > self.max_translation_m:
             translation *= self.max_translation_m / translation_norm
 
-        # Conjugation by the improper basis conversion still yields a proper
-        # rotation. Rotation axes acquire det(B), as required for pseudovectors.
+        # 使用非正交基变换做共轭后仍会得到合法旋转；旋转轴按赝矢量规则乘以
+        # det(B)。
         openxr_delta = pose.rotation @ self.controller_anchor.rotation.T
         robot_delta = self.basis @ openxr_delta @ self.basis.T
         rotation_vector = self.rotation_scale * matrix_to_rotation_vector(robot_delta)
@@ -340,7 +339,7 @@ class ClutchedPoseMapper:
 
 
 class HybridTranslationController:
-    """Use direct mapping nearby and feedback-rebased rate control farther away."""
+    """近距离使用直接映射，远距离使用基于反馈重置的速率控制。"""
 
     def __init__(
         self,
@@ -414,17 +413,15 @@ class HybridTranslationController:
         )
         speed = self.max_speed_m_s * speed_fraction
         if magnitude > 1e-9 and speed > 0.0:
-            # Rate mode must stay closed around the *actual* flange position.
-            # The previous implementation accumulated a target from the clutch
-            # anchor and could leave it 80 mm ahead of the robot.  That made a
-            # reversed hand motion feel ineffective until the old target was
-            # consumed.  Rebuild the lead from current feedback every tick.
+            # 速率模式必须围绕法兰的实际位置闭环。旧实现从离合锚点累计目标，可能
+            # 让目标领先机器人 80 mm；反向移动手柄时，必须先消耗旧目标才有响应。
+            # 因此每个 tick 都从当前反馈重新构造领先量。
             direction = deflection / magnitude
             lead_distance = self.max_target_lead_m * (speed / self.max_speed_m_s)
             self.target_position = feedback + direction * lead_distance
         else:
-            # Returning the controller to its center stops rate motion at the
-            # live flange instead of continuing an old accumulated command.
+            # 手柄回到中心后，应在实时法兰位置停止速率运动，而不是继续执行旧的
+            # 累积命令。
             self.target_position = feedback.copy()
         mode = "rate" if speed > 0.0 else "rate_hold"
         return HybridTranslationOutput(self.target_position.copy(), mode, speed)

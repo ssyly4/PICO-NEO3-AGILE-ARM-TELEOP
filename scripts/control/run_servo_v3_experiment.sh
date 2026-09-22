@@ -21,8 +21,7 @@ max_cpv_step_deg="${PICO_MAX_CPV_STEP_DEG:-0.95}"
 max_position_lead_mm="${PICO_MAX_EXECUTABLE_POSITION_LEAD_MM:-50}"
 max_rotation_lead_deg="${PICO_MAX_EXECUTABLE_ROTATION_LEAD_DEG:-16}"
 
-# The launcher must use the same interface name as the Python process during
-# CAN preparation, Home, and the post-Home handoff.
+# CAN 准备、Home 和 Home 后交接期间，启动脚本必须与 Python 进程使用同一接口名。
 arguments=("$@")
 show_selection=false
 for ((index = 0; index < ${#arguments[@]}; index++)); do

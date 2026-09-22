@@ -1,1 +1,1 @@
-"""Realtime NERO Servo v3 control."""
+"""NERO Servo v3 实时控制。"""

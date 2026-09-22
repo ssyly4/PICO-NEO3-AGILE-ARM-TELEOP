@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fan one PICO/OpenXR UDP stream out to the two arm controllers."""
+"""将一路 PICO/OpenXR UDP 数据流分发给两个机械臂控制器。"""
 
 from __future__ import annotations
 

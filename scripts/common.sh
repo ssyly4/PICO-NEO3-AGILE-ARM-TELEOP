@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Shared configuration for every operator-facing launcher.
+# 所有面向操作员的启动脚本共用此配置。
 COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$COMMON_DIR/.." && pwd)"
 

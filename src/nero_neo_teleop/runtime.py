@@ -1,4 +1,4 @@
-"""Filesystem and external-workspace configuration shared by runtime modules."""
+"""运行时模块共用的文件系统与外部工作区配置。"""
 
 from __future__ import annotations
 

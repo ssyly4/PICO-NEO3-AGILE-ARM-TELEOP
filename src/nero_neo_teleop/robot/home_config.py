@@ -1,4 +1,4 @@
-"""Fixed hardware and Home configuration for NERO dual-arm PICO teleoperation."""
+"""NERO 双臂 PICO 遥操的固定硬件与 Home 配置。"""
 
 from __future__ import annotations
 
@@ -12,17 +12,14 @@ RIGHT_CAN = os.environ.get("PICO_RIGHT_CAN_PORT", "can_right")
 LEFT_USB_BUS = os.environ.get("PICO_LEFT_CAN_USB_BUS", "1-2.2:1.0")
 RIGHT_USB_BUS = os.environ.get("PICO_RIGHT_CAN_USB_BUS", "3-1.2:1.0")
 
-# Shared base_link-frame TCP floor captured from the left arm at its lowest
-# permitted towel-contact pose on 2026-08-10.
+# 2026-08-10 在左臂允许的最低毛巾接触姿态下标定的 base_link 坐标系 TCP 下限。
 MIN_TCP_HEIGHT_MM = 169.331829
 
-# Shared base_link-frame TCP ceiling captured from the left arm at its highest
-# permitted towel-task pose on 2026-08-10.
+# 2026-08-10 在左臂允许的最高毛巾任务姿态下标定的 base_link 坐标系 TCP 上限。
 MAX_TCP_HEIGHT_MM = 391.729529
 
-# Cartesian-refined dual-arm Home generated from the hand-placed poses on
-# 2026-08-10. Both preserve their original XY, share link7 Z=267.434464 mm,
-# and align the physical tool-forward (+X) axis with base_link -Z.
+# 2026-08-10 根据手动摆放姿态做笛卡尔修正后得到的双臂 Home。两臂保留各自原始
+# XY，共用 link7 Z=267.434464 mm，并将工具物理前向轴（+X）对齐 base_link -Z。
 def _home_from_env(name: str, default: list[float]) -> np.ndarray:
     raw = os.environ.get(name)
     values = default if raw is None else [float(item.strip()) for item in raw.split(",")]

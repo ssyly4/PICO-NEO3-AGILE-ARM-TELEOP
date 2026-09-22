@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Independent NERO PICO Neo 3 Servo v3: velocity IK and finite-lead CPV."""
+"""独立 NERO PICO Neo 3 Servo v3：速度 IK 与有限领先 CPV。"""
 
 from __future__ import annotations
 
@@ -503,9 +503,8 @@ def main() -> None:
             else:
                 gripper_control.update(trigger=0.0, input_valid=False)
                 state = "network_hold" if tracked else "tracking_hold"
-                # A hard input hold must discard the old controller anchor.
-                # Otherwise the first recovered packet can command the full
-                # Cartesian lead envelope from a stale hand pose.
+                # 输入被强制保持时必须丢弃旧手柄锚点，否则恢复后的首个数据包可能
+                # 从过期手部位姿直接请求完整的笛卡尔领先包络。
                 if mapper.engaged:
                     mapper.reset_target(measured_pose)
                     world_to_view = None
@@ -621,9 +620,8 @@ def main() -> None:
         completion = "keyboard_interrupt"
         print(f"[{args.hand}] Keyboard interrupt: CPV holding", flush=True)
     finally:
-        # The dual wrapper forwards SIGINT to both workers after the terminal
-        # has already delivered it to the process group. Final CPV hold and
-        # log flushing must not be interrupted by that duplicate signal.
+        # 终端已向进程组发送 SIGINT 后，双臂封装器还会把它转发给两个工作进程。
+        # 最终 CPV 保持与日志刷新不能被这个重复信号中断。
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
         if backend is not None:

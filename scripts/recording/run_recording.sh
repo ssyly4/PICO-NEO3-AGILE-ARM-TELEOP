@@ -10,27 +10,26 @@ PYTHON="$NERO_LEROBOT_PYTHON"
 
 usage() {
   cat <<'EOF'
-Usage:
+用法：
   run_recording.sh --task TEXT --dataset NAME [options]
 
-Required:
-  --task TEXT                  Natural-language task label stored per frame.
-  --dataset NAME               Dataset directory/repo name.
+必填参数：
+  --task TEXT                  每帧保存的自然语言任务标签。
+  --dataset NAME               数据集目录或仓库名称。
 
-Options:
-  --episodes N                 Number of saved episodes (default: 10).
-  --data-root PATH             Parent directory for datasets.
-  --episode-seconds SEC        Maximum duration; 0 disables the limit.
-  --auto-stop MODE             dual, left, right, idle, or off.
-  --action-source SOURCE       controller_command or next_feedback.
-  --passive                    Do not manage teleop/Home subprocesses.
-  --execute                    Start cameras, CAN and robot processes.
-  --help                       Show this help.
-  -- ARGS...                   Additional recorder arguments.
+可选参数：
+  --episodes N                 成功保存的 episode 数量，默认 10。
+  --data-root PATH             数据集父目录。
+  --episode-seconds SEC        单集最长时间；0 表示不限制。
+  --auto-stop MODE             dual、left、right、idle 或 off。
+  --action-source SOURCE       controller_command 或 next_feedback。
+  --passive                    不托管遥操和 Home 子进程。
+  --execute                    启动相机、CAN 和机器人进程。
+  --help                       显示本帮助。
+  -- ARGS...                   传递给录制器的额外参数。
 
-Robot, camera and controller settings are read from .env. Every option can
-also be supplied with the NERO_RECORD_* environment variables shown in
-.env.example.
+机器人、相机和控制器配置从 .env 读取。上述选项也可通过 .env.example 中列出的
+NERO_RECORD_* 环境变量提供。
 EOF
 }
 

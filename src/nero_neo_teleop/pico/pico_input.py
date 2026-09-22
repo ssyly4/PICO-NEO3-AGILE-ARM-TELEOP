@@ -13,8 +13,8 @@ from typing import Any
 import numpy as np
 
 
-# Keep the original wire identifiers so already-installed Neo 3 APKs remain
-# compatible while the repository and Python APIs use PICO naming.
+# 保留原始线协议标识，使已经安装的 Neo 3 APK 继续兼容；仓库和 Python API 则统一
+# 使用 PICO 命名。
 INPUT_SCHEMA = "nero.quest.input.v1"
 SYNC_SCHEMA = "nero.quest.sync.v1"
 BINARY_INPUT_MAGIC = b"NQ01"
@@ -61,11 +61,11 @@ def _decode_binary_state(payload: bytes, offset: int) -> tuple[dict[str, Any], i
 
 
 def decode_binary_input_packet(payload: bytes) -> dict[str, Any]:
-    """Decode the allocation-free PICO packet emitted by Unity.
+    """解码 Unity 发出的无额外内存分配 PICO 数据包。
 
-    Layout is little-endian: magic[4], sequence[int64], unix_ns[int64],
-    monotonic_sec[double], then three controller states. Each state contains
-    four flag bytes followed by sixteen float32 values.
+    数据采用小端布局：magic[4]、sequence[int64]、unix_ns[int64]、
+    monotonic_sec[double]，之后为三个控制器状态。每个状态包含四个标志字节和
+    十六个 float32 值。
     """
     if len(payload) != BINARY_INPUT_PACKET_SIZE:
         raise ValueError(
@@ -251,7 +251,7 @@ class LatestControllerSample:
 
 
 class PicoInputMonitor:
-    """Receive PICO controller packets outside the fixed-rate robot loop."""
+    """在机器人定频控制循环之外接收 PICO 手柄数据包。"""
 
     def __init__(self, bind: str, port: int) -> None:
         self.stream = PicoUdpStream(bind=bind, port=port, timeout_sec=0.2)

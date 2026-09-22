@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Preview or move both follower NERO arms to the community mirrored Home."""
+"""预览或将两个 NERO 从臂移动到公共镜像 Home。"""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ CONFIRMATION = "MOVE BOTH NERO ARMS TO COMMUNITY HOME"
 
 
 def wait_live_joint_feedback(robot, timeout_sec: float = 1.0) -> np.ndarray:
-    """Read one complete sample while an arm is intentionally moving."""
+    """机械臂主动运动期间读取一组完整反馈。"""
     deadline = time.monotonic() + timeout_sec
     while time.monotonic() < deadline:
         feedback = robot.get_joint_angles()

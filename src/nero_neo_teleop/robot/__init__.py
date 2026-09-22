@@ -1,1 +1,1 @@
-"""NERO robot I/O and Home configuration."""
+"""NERO 机器人输入输出与 Home 配置。"""

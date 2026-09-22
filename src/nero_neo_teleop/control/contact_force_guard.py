@@ -1,4 +1,4 @@
-"""TCP contact-force estimation and downward-only motion guarding."""
+"""TCP 接触力估计与仅限制向下运动的保护。"""
 
 from __future__ import annotations
 
@@ -19,12 +19,11 @@ class ContactForceSample:
 
 
 class TcpForceEstimator:
-    """Estimate an external TCP wrench from gravity-compensated motor torque.
+    """根据重力补偿后的电机力矩估计 TCP 外部力旋量。
 
-    The NERO does not expose a six-axis wrist force sensor.  Its reported motor
-    torques contain a pose-dependent gravity term plus a repeatable static bias.
-    Calibration removes that bias at the starting pose; the URDF gravity model
-    then tracks the change as the arm moves.
+    NERO 不提供六轴腕部力传感器。电机上报力矩包含随姿态变化的重力项和可重复的
+    静态偏置。标定过程在起始姿态消除该偏置，随后由 URDF 重力模型跟随机械臂运动
+    产生的变化。
     """
 
     def __init__(
@@ -87,8 +86,8 @@ class TcpForceEstimator:
             self.frame_id,
             pin.ReferenceFrame.LOCAL_WORLD_ALIGNED,
         )
-        # residual = J.T @ wrench.  Ridge regularization prevents large wrench
-        # estimates around weak/singular Cartesian directions.
+        # residual = J.T @ wrench。岭正则化可避免在薄弱或奇异的笛卡尔方向上
+        # 产生过大的力旋量估计。
         system = jacobian @ jacobian.T + self.wrench_damping**2 * np.eye(6)
         wrench = np.linalg.solve(system, jacobian @ residual)
         alpha = 1.0 - np.exp(-2.0 * np.pi * self.cutoff_hz * max(float(dt), 1e-4))
@@ -103,12 +102,11 @@ class TcpForceEstimator:
 
 
 class DownwardContactGuard:
-    """Latch out descent on a local force change, preserving XY/upward escape.
+    """检测局部力变化后锁止下降，同时保留 XY 与向上脱离能力。
 
-    Absolute wrench estimates drift with pose because the URDF and motor-current
-    model are imperfect.  A baseline is therefore tracked whenever there is no
-    downward intent and frozen for each descent.  The guard operates on the
-    magnitude of the change from that local baseline, not on absolute Fz.
+    由于 URDF 和电机电流模型并不完美，绝对力旋量估计会随姿态漂移。因此，无向下
+    意图时持续更新基线，每次下降时冻结基线。保护逻辑依据相对局部基线的变化幅值，
+    而不是绝对 Fz。
     """
 
     def __init__(

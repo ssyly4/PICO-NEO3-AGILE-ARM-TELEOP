@@ -50,7 +50,7 @@ cd /home/dev/nero_neo_teleop
 数采前用相机实时画面确认 world、left_wrist、right_wrist 角色，不能仅靠
 `/dev/videoN` 编号；同时确认数据根目录、episode 目标数和 action 来源。
 正式数采入口为 `scripts/recording/run_recording.sh`，任务和 action 来源通过参数
-配置，具体见 `README.zh-CN.md`。数采文件存放在仓库外的
+配置，具体见 `README.md`。数采文件存放在仓库外的
 `NERO_RECORD_DATA_DIR`，运行日志存放在 `artifacts/`。
 
 CAN/CPV 失联、反馈过期、非预期运动或接触异常时立即停止并检查日志；

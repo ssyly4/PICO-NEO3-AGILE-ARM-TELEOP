@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Minimal velocity-level Cartesian servo for NERO teleoperation."""
+"""用于 NERO 遥操作的轻量速度级笛卡尔伺服。"""
 
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ class BoundedPoseTargetResult:
 
 
 class PoseLowPassFilter:
-    """Light first-order filtering directly on position and SO(3)."""
+    """直接对位置和 SO(3) 姿态做轻量一阶滤波。"""
 
     def __init__(self, *, position_cutoff_hz: float, rotation_cutoff_hz: float) -> None:
         if position_cutoff_hz <= 0.0 or rotation_cutoff_hz <= 0.0:
@@ -102,7 +102,7 @@ def bounded_pose_target(
     max_position_lead_m: float,
     max_orientation_lead_rad: float,
 ) -> BoundedPoseTargetResult:
-    """Keep the executable Cartesian target within a finite envelope."""
+    """将可执行笛卡尔目标限制在有限包络内。"""
     current_position = np.asarray(current_position, dtype=np.float64)
     current_rotation = np.asarray(current_rotation, dtype=np.float64)
     desired_position = np.asarray(desired_position, dtype=np.float64)
@@ -144,10 +144,9 @@ def bounded_pose_target(
 
 
 def extrapolate_controller_state(state: dict, horizon_sec: float) -> dict:
-    """Constant-twist prediction for a short UDP gap.
+    """对短时 UDP 断流进行恒定 twist 预测。
 
-    The horizon is intentionally bounded by the caller. Button values are held;
-    only pose is predicted from the OpenXR velocity fields.
+    预测时域由调用方显式限制。按键值保持不变，只根据 OpenXR 速度字段预测位姿。
     """
     if horizon_sec < 0.0:
         raise ValueError("horizon_sec must be non-negative")
@@ -181,7 +180,7 @@ def extrapolate_controller_state(state: dict, horizon_sec: float) -> dict:
 
 
 class PinocchioVelocityServo:
-    """Resolved-rate IK with adaptive damping and projected limit avoidance."""
+    """带自适应阻尼和投影限位回避的速度级 IK。"""
 
     def __init__(
         self,
@@ -399,7 +398,7 @@ class PinocchioVelocityServo:
         return value * (maximum / norm)
 
 class FiniteLeadCommandFollower:
-    """Convert joint velocity to CPV targets without accumulating command debt."""
+    """将关节速度转换为 CPV 目标，同时避免累积命令欠账。"""
 
     def __init__(
         self,

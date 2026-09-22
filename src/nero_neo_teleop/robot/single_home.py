@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Move one follower NERO arm to a configured PICO teleoperation Home."""
+"""将单个 NERO 从臂移动到配置的 PICO 遥操 Home。"""
 
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ CONFIRMATION = "MOVE NERO ARM TO PICO HOME"
 
 
 def wait_live_joint_feedback(robot, timeout_sec: float = 1.0) -> np.ndarray:
-    """Read one complete sample while the arm is intentionally moving."""
+    """机械臂主动运动期间读取一组完整反馈。"""
     deadline = time.monotonic() + timeout_sec
     while time.monotonic() < deadline:
         feedback = robot.get_joint_angles()
@@ -147,8 +147,7 @@ def main() -> None:
         else:
             raise TimeoutError("Single-arm PICO Home motion timed out")
 
-        # Confirm that the arm has actually settled before disconnecting and
-        # handing the same CAN interface to the CPV process.
+        # 断开连接并把同一 CAN 接口交给 CPV 进程前，确认机械臂已经真正稳定。
         settled = wait_complete_joint_feedback(robot, timeout_sec=5.0)
         settled_error_deg = np.rad2deg(target - settled)
         if float(np.max(np.abs(settled_error_deg))) > args.tolerance_deg:

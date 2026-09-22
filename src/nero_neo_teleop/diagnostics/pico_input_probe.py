@@ -1,4 +1,4 @@
-"""Print live PICO controller packets without commanding a robot."""
+"""只打印实时 PICO 手柄数据包，不向机器人发送命令。"""
 
 from __future__ import annotations
 

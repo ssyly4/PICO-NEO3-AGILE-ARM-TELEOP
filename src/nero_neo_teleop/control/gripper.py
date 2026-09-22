@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Controller-button gripper state shared by single- and dual-arm teleop."""
+"""单臂和双臂遥操共用的手柄按键夹爪状态。"""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ class GripperToggleOutput:
 
 
 class GripperToggleController:
-    """Toggle on a clean button press edge and latch the requested width."""
+    """在有效按键上升沿切换状态，并锁存请求的夹爪宽度。"""
 
     def __init__(
         self,
@@ -59,7 +59,7 @@ class GripperAnalogOutput:
 
 
 class GripperAnalogController:
-    """Continuously map a trigger to gripper width with noise suppression."""
+    """将扳机连续映射为夹爪宽度，并抑制输入噪声。"""
 
     def __init__(
         self,

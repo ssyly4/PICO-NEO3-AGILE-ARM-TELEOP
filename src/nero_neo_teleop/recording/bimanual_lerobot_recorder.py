@@ -1,4 +1,4 @@
-"""Record passive dual-NERO demonstrations in LeRobot v3 format."""
+"""以 LeRobot v3 格式录制双 NERO 机械臂示教数据。"""
 
 from __future__ import annotations
 
@@ -69,7 +69,7 @@ class BimanualAction:
 
 
 class NeroCanStateSource:
-    """Passively decode NERO feedback without creating a second SDK controller."""
+    """被动解码 NERO 反馈，不创建第二个 SDK 控制器。"""
 
     CAN_FRAME = struct.Struct("=IB3x8s")
     JOINT_FRAME_MAP = {
@@ -222,7 +222,7 @@ def dataset_features(height: int, width: int, image_dtype: str) -> dict[str, dic
 
 
 def feedback_monotonic_ns(timestamp: float) -> int:
-    """Convert an SDK receive timestamp from either supported clock domain."""
+    """将 SDK 接收时间戳从任一支持的时钟域转换为统一时间。"""
     now_monotonic = time.monotonic()
     now_unix = time.time()
     if abs(timestamp - now_monotonic) <= 10.0:
@@ -273,7 +273,7 @@ def max_joint_speed_deg_s(previous: BimanualSample, current: BimanualSample) -> 
 
 
 class DualReleaseAutoStop:
-    """Detect synchronized gripper release followed by stationary arms."""
+    """检测双夹爪同步松开后机械臂保持静止的事件。"""
 
     def __init__(
         self,
@@ -346,7 +346,7 @@ class DualReleaseAutoStop:
 
 
 class SingleReleaseAutoStop:
-    """Detect one gripper closing, reopening, then both arms becoming stationary."""
+    """检测单夹爪闭合再张开、随后双臂静止的事件。"""
 
     def __init__(
         self,
@@ -401,7 +401,7 @@ class SingleReleaseAutoStop:
 
 
 class InactivityAutoStop:
-    """Stop after both arms remain stationary for a continuous interval."""
+    """双臂连续静止达到指定时间后停止录制。"""
 
     def __init__(self, *, stationary_sec: float, stationary_speed_deg_s: float) -> None:
         if min(stationary_sec, stationary_speed_deg_s) <= 0.0:
@@ -542,7 +542,7 @@ def write_diagnostics(root: Path, episode_index: int, rows: list[dict[str, Any]]
 
 
 def validate_existing_dataset(root: Path) -> int:
-    """Reject incomplete or corrupt LeRobot roots before resume touches them."""
+    """续录前拒绝不完整或损坏的 LeRobot 数据根目录。"""
     import pyarrow.parquet as pq
 
     tasks = root / "meta/tasks.parquet"

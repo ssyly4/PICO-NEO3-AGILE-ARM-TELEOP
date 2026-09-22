@@ -1,4 +1,4 @@
-"""Timestamped local command stream shared by teleop and data recording."""
+"""遥操与数采共用的带时间戳本地命令流。"""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ class ArmCommand:
 
 
 class ArmCommandPublisher:
-    """Best-effort nonblocking publisher; robot control never waits on recording."""
+    """尽力而为的非阻塞发布器，机器人控制绝不等待数采。"""
 
     def __init__(self, path: str, hand: str) -> None:
         if hand not in {"left", "right"}:
@@ -73,8 +73,7 @@ class ArmCommandPublisher:
             self._socket.sendto(payload, self.path)
             self.sent += 1
         except OSError:
-            # Recording is observational. A missing/full socket must never
-            # interrupt the robot control loop.
+            # 数采只负责观测；socket 缺失或写满绝不能中断机器人控制循环。
             self.dropped += 1
 
     def close(self) -> None:
@@ -84,7 +83,7 @@ class ArmCommandPublisher:
 
 
 class ArmCommandReceiver:
-    """Buffer timestamped Unix datagrams and select the command nearest a frame."""
+    """缓存带时间戳的 Unix 数据报，并选择最接近图像帧的命令。"""
 
     def __init__(self, path: str | Path, hand: str, *, capacity: int = 512) -> None:
         if hand not in {"left", "right"}:

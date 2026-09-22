@@ -1,9 +1,9 @@
-# Contributing
+# 贡献指南
 
-Keep hardware-specific values in `.env`. Do not commit datasets, logs, APKs,
-credentials, absolute home paths, or generated Unity directories. New robot
-motion must have a non-executing preflight and an explicit `--execute` gate.
-Do not commit the PICO Unity OpenXR SDK under `pico_client/LocalPackages/`.
+硬件相关配置必须写入 `.env`。不要提交数据集、日志、APK、凭据、用户绝对路径或
+Unity 生成目录。新增实机运动功能必须提供不执行运动的预检，并通过显式
+`--execute` 参数授权。不要提交 `pico_client/LocalPackages/` 下的 PICO Unity
+OpenXR SDK。
 
-Before a pull request, run Python compilation, unit tests, `bash -n` on shell
-launchers, and `git diff --check`. State whether physical validation was run.
+提交合并请求前，请运行 Python 编译检查、单元测试、Shell 启动脚本的 `bash -n`
+检查以及 `git diff --check`，并说明是否完成过实机验证。

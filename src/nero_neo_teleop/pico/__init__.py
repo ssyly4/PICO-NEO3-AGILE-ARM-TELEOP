@@ -1,1 +1,1 @@
-"""PICO controller transport and pose mapping."""
+"""PICO 手柄数据传输与位姿映射。"""

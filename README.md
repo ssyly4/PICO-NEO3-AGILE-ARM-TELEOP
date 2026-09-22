@@ -1,103 +1,98 @@
-# NERO Neo Teleoperation
+# NERO Neo 遥操作系统
 
-[简体中文](README.zh-CN.md) | English
+简体中文 | [English](README.md)
 
-PICO Neo 3 bimanual teleoperation and LeRobot v3 data collection for AgileX
-NERO seven-axis robot arms. The stack maps OpenXR controller poses to Cartesian
-tool targets, solves velocity IK with Pinocchio, and streams guarded joint
-commands through the NERO CPV interface.
+本项目为 AgileX NERO 七轴机械臂提供基于 PICO Neo 3 的双臂遥操作与
+LeRobot v3 数据采集能力。系统将 OpenXR 手柄位姿映射为末端笛卡尔目标，
+使用 Pinocchio 求解速度级 IK，再通过 NERO CPV 接口发送受保护的关节指令。
 
-> **Safety:** this software commands physical robots. Test one arm at low speed,
-> keep the emergency stop reachable, verify Home poses and joint limits, and
-> never operate near people. Read [SAFETY.md](docs/SAFETY.md) before execution.
+> **安全警告：** 本软件会直接控制真实机械臂。实机前必须低速单臂验证，
+> 保证急停可触达，并检查 Home、关节限位和周围人员。执行前请阅读
+> [安全说明](docs/SAFETY.md)。
 
-## Features
+## 主要功能
 
-- PICO Neo 3 Unity/OpenXR client with binary UDP streaming
-- One-arm and two-arm clutch-based Cartesian teleoperation
-- Pinocchio differential IK, pose filtering, finite command lead, and CPV guards
-- Analog gripper control and optional downward-force guard
-- Automatic SocketCAN binding and guarded dual-arm Home
-- Configurable three-camera, dual-arm LeRobot v3 recording
+- PICO Neo 3 Unity/OpenXR 客户端与低开销二进制 UDP 传输
+- 单臂、双臂离合式笛卡尔遥操作
+- Pinocchio 微分 IK、位姿滤波、有限领先和 CPV 安全保护
+- 模拟量夹爪控制与可选向下接触力保护
+- SocketCAN 自动绑定和双臂受控回位
+- 三相机、双机械臂 LeRobot v3 数采与断点续采
 
-## Architecture
+## 系统架构
 
 ```text
-PICO controllers (OpenXR; UDP sender nominally 60 Hz)
+PICO 手柄（OpenXR；UDP 发送目标 60 Hz）
         | UDP :50150
         v
-PICO input + coordinate mapper
-        | Cartesian target
+PICO 输入解析 + 坐标系映射
+        | 末端笛卡尔目标
         v
-Pinocchio velocity IK + safety guards
-        | 7-joint target @ 30-40 Hz
+Pinocchio 速度 IK + 安全保护
+        | 7 关节目标，30-40 Hz
         v
-NERO CPV backend -> SocketCAN -> left/right robot
+NERO CPV -> SocketCAN -> 左右机械臂
 
-CAN feedback + 3 cameras + executed commands -> LeRobot v3 dataset
+CAN 反馈 + 三路相机 + 实际执行指令 -> LeRobot v3 数据集
 ```
 
-See [Architecture](docs/ARCHITECTURE.md) for the data and control paths. The
-detailed maintainer guide is available in Chinese at
-[Core code and call paths](docs/CODE_GUIDE.zh-CN.md).
+完整数据流和控制链见[架构说明](docs/ARCHITECTURE.md)；需要继续维护代码时，
+从[核心代码与调用链](docs/CODE_GUIDE.zh-CN.md)开始阅读。
 
-## Repository Layout
+## 目录结构
 
-| Path | Purpose |
+| 目录 | 用途 |
 | --- | --- |
-| `src/nero_neo_teleop/` | Host-side Python package |
-| `pico_client/` | Unity/OpenXR PICO application |
-| `scripts/control/` | Home and teleoperation launchers |
-| `scripts/recording/` | Managed LeRobot recorder |
-| `scripts/can/` | Stable gs_usb/SocketCAN setup |
-| `scripts/pico/` | Build, install, and input diagnostics |
-| `tests/` | Mapping, controller, Home, and recorder tests |
-| `artifacts/` | Ignored local builds and logs |
+| `src/nero_neo_teleop/` | 主机端 Python 包 |
+| `pico_client/` | Unity/OpenXR PICO 应用 |
+| `scripts/control/` | 回位和遥操入口 |
+| `scripts/recording/` | LeRobot 托管数采入口 |
+| `scripts/can/` | gs_usb 和 SocketCAN 配置 |
+| `scripts/pico/` | APK 构建、安装、输入检查 |
+| `tests/` | 映射、控制器、回位和数采测试 |
+| `artifacts/` | 本机 APK、日志等，不进入 Git |
 
-## Requirements
+交接文档：
 
-- Linux with SocketCAN and two `gs_usb` CAN adapters
-- Python 3.11+, NumPy, Pinocchio, and the NERO SDK (`pyAgxArm`)
-- An existing `nero_ws` providing `nero_vla`, the NERO URDF, and SDK dependencies
-- PICO Neo 3, Unity 6, Android build support, and ADB
-- Three V4L2 cameras and a LeRobot environment for recording
+- [核心代码与调用链](docs/CODE_GUIDE.zh-CN.md)：入口、进程、核心类和逐 tick 执行顺序。
+- [运行入口](docs/RUNTIME.md)：日常命令和 Python 包职责。
+- [交接清单](docs/HANDOFF.zh-CN.md)：外部依赖、本机配置和验证步骤。
+- [安全说明](docs/SAFETY.md)：实机操作边界。
 
-The robot SDK, LeRobot, and the PICO Unity OpenXR SDK are external dependencies
-and are not vendored here.
+## 环境要求
 
-## Setup
+- Linux、SocketCAN 和两个 `gs_usb` CAN 适配器
+- Python 3.11+、NumPy、Pinocchio 和 NERO SDK（`pyAgxArm`）
+- 已配置的 `nero_ws`，提供 `nero_vla`、NERO URDF 和 SDK 依赖
+- PICO Neo 3、Unity 6 Android 构建环境和 ADB
+- 数采需要三路 V4L2 相机及 LeRobot Python 环境
+
+机械臂 SDK、LeRobot 和 PICO Unity OpenXR SDK 均为外部依赖，本仓库不复制
+这些项目。
+
+## 安装配置
 
 ```bash
 git clone https://github.com/ssyly4/PICO-NEO3-AGILE-ARM-TELEOP.git nero_neo_teleop
 cd nero_neo_teleop
 cp .env.example .env
-# Edit .env for your SDK, CAN USB paths, cameras, and PICO host address.
+# 修改 .env：SDK 路径、CAN USB 路径、相机和 PICO 主机地址。
 python3 -m pip install -e .
 ```
 
-This installs the local Python package, not the external NERO SDK, Pinocchio,
-LeRobot environment, or PICO OpenXR package. Follow the
-[handoff checklist](docs/HANDOFF.zh-CN.md) before operating hardware.
+此命令只安装本仓库的 Python 包，不会安装 NERO SDK、Pinocchio、LeRobot 环境或
+PICO OpenXR 本地包。实机交接前按[交接清单](docs/HANDOFF.zh-CN.md)逐项核对。
 
-Find persistent devices before editing `.env`:
-
-```bash
-lsusb -t
-find /dev/v4l/by-path -type l
-```
-
-Download the PICO Unity OpenXR SDK from the
-[official PICO developer site](https://developer.picoxr.com/document/unity-openxr/)
-and place its package directory at:
+从 [PICO 官方开发者网站](https://developer.picoxr.com/zh/document/unity-openxr/)
+下载 PICO Unity OpenXR SDK，并将其包目录放到：
 
 ```text
 pico_client/LocalPackages/com.unity.xr.openxr.picoxr/
 ```
 
-The package is intentionally excluded from Git because its upstream license
-does not grant this repository permission to redistribute it.
+该 SDK 的上游许可证没有授予本仓库再分发权限，因此此目录不会进入 Git。
 
-Build and install the PICO client:
+构建安装 PICO 客户端：
 
 ```bash
 ./scripts/pico/build.sh
@@ -105,70 +100,159 @@ Build and install the PICO client:
 ./scripts/pico/check_input.sh
 ```
 
-## Robot Operation
+## 实机操作
 
-Preview Home without moving, then execute only after checking the printed poses:
+先只预览回位轨迹，确认输出无误后再执行：
 
 ```bash
 ./scripts/control/run_dual_home.sh
 ./scripts/control/run_dual_home.sh --execute
 ```
 
-Start one-arm or two-arm teleoperation:
+启动单臂或双臂遥操：
 
 ```bash
 ./scripts/control/run_servo_v3_experiment.sh --duration 120 --execute
 ./scripts/control/run_dual_servo_v3_experiment.sh --duration 120 --execute
 ```
 
-The single-arm launcher defaults to the configured right arm. `--can-port`
-selects the corresponding left/right Home and PICO controller; unconfigured
-interfaces are rejected before motion. Preview Home separately before using
-`--execute`.
+单臂入口默认使用配置的右臂；`--can-port` 必须是已配置的左臂或右臂接口，
+并决定对应的 Home 和 PICO 手柄。执行前应单独预览 Home 目标。
 
-Controls: hold **Grip** to clutch and move an arm, release it to hold and
-re-anchor, and use **Trigger** for the gripper.
+按住 **Grip** 进入跟随，松开后机械臂保持并重新锚定；**Trigger** 控制夹爪。
 
-## Data Collection
+## 数据采集
 
 ```bash
 ./scripts/recording/run_recording.sh \
-  --task "your task instruction" \
+  --task "任务自然语言描述" \
   --dataset nero_demo_v1 \
   --episodes 50 \
   --auto-stop off
 
-# After checking the preview:
+# 确认预览后再执行
 ./scripts/recording/run_recording.sh \
-  --task "your task instruction" \
+  --task "任务自然语言描述" \
   --dataset nero_demo_v1 \
   --episodes 50 \
   --auto-stop off \
   --execute
 ```
 
-The same entry point is used for every task. Configure the task label, dataset
-name, episode count, action source, duration, and stop condition through its CLI
-or the `NERO_RECORD_*` environment variables. Without `--execute` it only prints
-the resolved plan. During execution, Enter prepares an episode, motion starts
-recording, and the operator chooses whether to save or discard each attempt.
+所有任务共用这一个入口。任务文本、数据集名称、episode 数、action 来源、最长时长和
+自动停止方式均通过命令行或 `NERO_RECORD_*` 环境变量配置；不加 `--execute` 只打印
+最终配置。执行时按 Enter 准备，检测到运动后开始录制，每集结束后选择保存或丢弃。
 
-## Validation
+## 当前边界
 
-```bash
-PYTHONPATH=src python3 -m compileall -q src tests
-PYTHONPATH=src python3 -m unittest discover -s tests
-for file in scripts/**/*.sh; do bash -n "$file"; done
+这是在特定双 NERO 平台上验证的研究原型，不是认证安全系统。Home、CAN 拓扑、
+URDF、相机和接触力阈值均与硬件有关，换设备后必须重新标定。
+
+本项目原创代码采用 Apache-2.0 许可证；外部 PICO SDK 遵循其上游许可证且不随本仓库
+分发。
+
+## 代码架构详解
+
+### 1. 输入到机械臂的完整链路
+
+```text
+PICO Neo 3 OpenXR
+  -> Unity 客户端读取头显/手柄状态
+  -> 二进制 UDP :50150
+  -> pico_input 解包并保存最新快照
+  -> pose_mapper 将手柄位姿转换成目标
+  -> Servo v3 根据 Grip 离合状态生成笛卡尔增量
+  -> Pinocchio FK/Jacobian 与速度级 IK 求七关节目标
+  -> 关节步长、限位、过期输入和接触力保护
+  -> pyAgxArm CPV position API
+  -> SocketCAN -> NERO 机械臂
 ```
 
-Hardware tests are separate from unit tests. No test or default setup command
-should move a robot without an explicit `--execute` argument.
+遥操主循环通常按 30 到 40 Hz 运行；PICO 输入源可能以更高频率发送。每次循环使用
+带时间戳的最新有效输入，网络过期时进入 hold，而不是重放旧位姿。
 
-## Status and Limits
+### 2. Python 包的职责
 
-This is a research prototype validated on a specific dual-NERO installation.
-Home poses, CAN topology, URDF location, cameras, and force thresholds are
-hardware-specific and must be calibrated. It is not a certified safety system.
+| 路径 | 主要文件 | 职责 |
+|---|---|---|
+| `src/nero_neo_teleop/pico/` | `pico_input.py` | 解析 UDP、校验序号/时间戳、提供左右手快照 |
+|  | `udp_fanout.py` | 将 PICO 输入分发给单臂或双臂控制进程 |
+|  | `pose_mapper.py` | 坐标变换、平移/姿态增益和左右镜像 |
+| `src/nero_neo_teleop/control/` | `servo_v3_controller.py` | Servo v3 状态机、离合、hold、重锚定和命令节流 |
+|  | `servo_v3_core.py` | 目标差分、姿态误差、速度/加速度限制和 IK 输入 |
+|  | `gripper.py` | Trigger 到夹爪宽度的映射和限速 |
+|  | `contact_force_guard.py` | 可选接触力保护，检测下探受力 |
+| `src/nero_neo_teleop/robot/` | `nero_io.py` | SDK 对象、反馈快照和 CPV/夹爪通信封装 |
+|  | `dual_home.py` | 双臂反馈、Home 执行授权和误差检查 |
+|  | `single_home.py` | 单臂 Home 流程 |
+|  | `home_config.py` | 左右 Home、镜像关系和硬件参数 |
+| `src/nero_neo_teleop/recording/` | `action_command_stream.py` | 保存实际发出的 command 和时间戳 |
+|  | `bimanual_lerobot_recorder.py` | 30 Hz 采集 CAN、三路视频和 command，写 LeRobot v3 |
+| `src/nero_neo_teleop/runtime.py` | - | 环境变量、路径和运行时初始化 |
+| `src/nero_neo_teleop/diagnostics/` | `pico_input_probe.py` | 只读检查 PICO 左右手数据是否持续到达 |
 
-The repository's original source is licensed under Apache-2.0. External PICO SDK
-components retain their upstream license and are not distributed here.
+IK 的机器人模型和底层 SDK 依赖 `nero_ws` 提供的环境；本仓库不复制一套手写机械臂
+模型。详见 `/home/dev/nero_ws/README.md`。
+
+### 3. Shell 入口职责
+
+| 路径 | 功能 |
+|---|---|
+| `scripts/pico/build.sh` | 使用 Unity 构建 PICO Android 客户端 |
+| `scripts/pico/install_and_launch.sh` | 通过 ADB 安装并启动客户端 |
+| `scripts/pico/check_input.sh` | 查看 PICO UDP 包和左右手追踪状态 |
+| `scripts/can/ensure_can_interface.sh` | 按 USB 拓扑恢复 gs_usb、创建接口并设置 bitrate |
+| `scripts/can/reset_gs_usb_adapter.sh` | 重置卡住的 gs_usb 适配器 |
+| `scripts/control/run_dual_home.sh` | 双臂 Home 预览/执行，执行需要授权 |
+| `scripts/control/run_servo_v3_experiment.sh` | 单臂 Servo v3 遥操 |
+| `scripts/control/run_dual_servo_v3_experiment.sh` | 双臂 Servo v3 遥操 |
+| `scripts/recording/run_recording.sh` | 通用双臂遥操、三相机采集、episode 保存/丢弃和回位 |
+| `scripts/check.sh` | 运行仓库级检查和测试 |
+
+### 4. 相机、反馈和数据边界
+
+相机应通过 V4L2 稳定路径传入，不能把 `/dev/videoN` 编号当成永久身份。当前数采配置
+约定为世界相机 video6、左腕相机 video2、右腕相机 video4；启动脚本会打印最终设备，
+插拔后必须以打印结果和现场画面为准。
+
+数据不写入本 Git 仓库，正式数据根目录为：
+
+```text
+/home/dev/nero_data/raw/
+```
+
+`artifacts/` 只保存 APK、运行日志和诊断产物。训练转换、筛选、划分和 checkpoint
+应放到 `nero_data` 或训练服务器。
+
+### 5. 一次运行的顺序
+
+```bash
+cd /home/dev/nero_neo_teleop
+./scripts/pico/check_input.sh
+./scripts/control/run_dual_home.sh
+./scripts/control/run_dual_home.sh --execute
+./scripts/control/run_dual_servo_v3_experiment.sh --duration 30 --execute
+```
+
+数采时先检查三路相机、两路 CAN 和 PICO 输入，再运行：
+
+```bash
+./scripts/recording/run_recording.sh --task "任务描述" --dataset nero_demo_v1 --episodes 50 --execute
+```
+
+录制频率是 30 Hz。每帧应包含三路图像、左右臂七关节反馈、夹爪反馈、时间戳以及实际
+发送的 `controller_command`。异常停止时先让控制器 hold，再由录制器决定保存或丢弃。
+
+### 6. 外部依赖
+
+```text
+本仓库
+  ├─ PICO Unity/OpenXR SDK（本地构建，不随仓库分发）
+  ├─ /home/dev/nero_ws/src/pyAgxArm（NERO SDK）
+  ├─ /home/dev/nero_ws/src/piper_ros（URDF/ROS 描述）
+  ├─ Pinocchio / NumPy / Python 环境
+  └─ /home/dev/lerobot_ws/lerobot（LeRobot 工具）
+```
+
+改变 USB 拓扑、Home 姿态、相机角色、夹爪标定或保护参数后，必须重新进行单臂低速
+验证。这个仓库是研究原型，不是认证安全系统。

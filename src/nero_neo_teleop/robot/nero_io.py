@@ -1,4 +1,4 @@
-"""Small robot-feedback helpers shared by active controllers."""
+"""主动控制器共用的轻量机器人反馈辅助函数。"""
 
 from __future__ import annotations
 

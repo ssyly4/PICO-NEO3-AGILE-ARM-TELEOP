@@ -1,1 +1,1 @@
-"""Operator-facing diagnostics for PICO and NERO connectivity."""
+"""面向操作员的 PICO 与 NERO 连接诊断工具。"""

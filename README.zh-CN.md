@@ -36,7 +36,8 @@ NERO CPV -> SocketCAN -> 左右机械臂
 CAN 反馈 + 三路相机 + 实际执行指令 -> LeRobot v3 数据集
 ```
 
-完整数据流和控制链见[架构说明](docs/ARCHITECTURE.md)。
+完整数据流和控制链见[架构说明](docs/ARCHITECTURE.md)；需要继续维护代码时，
+从[核心代码与调用链](docs/CODE_GUIDE.zh-CN.md)开始阅读。
 
 ## 目录结构
 
@@ -50,6 +51,13 @@ CAN 反馈 + 三路相机 + 实际执行指令 -> LeRobot v3 数据集
 | `scripts/pico/` | APK 构建、安装、输入检查 |
 | `tests/` | 映射、控制器、回位和数采测试 |
 | `artifacts/` | 本机 APK、日志等，不进入 Git |
+
+交接文档：
+
+- [核心代码与调用链](docs/CODE_GUIDE.zh-CN.md)：入口、进程、核心类和逐 tick 执行顺序。
+- [运行入口](docs/RUNTIME.md)：日常命令和 Python 包职责。
+- [交接清单](docs/HANDOFF.zh-CN.md)：外部依赖、本机配置和验证步骤。
+- [安全说明](docs/SAFETY.md)：实机操作边界。
 
 ## 环境要求
 

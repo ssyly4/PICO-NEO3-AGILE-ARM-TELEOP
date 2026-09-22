@@ -37,7 +37,9 @@ NERO CPV backend -> SocketCAN -> left/right robot
 CAN feedback + 3 cameras + executed commands -> LeRobot v3 dataset
 ```
 
-See [Architecture](docs/ARCHITECTURE.md) for the data and control paths.
+See [Architecture](docs/ARCHITECTURE.md) for the data and control paths. The
+detailed maintainer guide is available in Chinese at
+[Core code and call paths](docs/CODE_GUIDE.zh-CN.md).
 
 ## Repository Layout
 

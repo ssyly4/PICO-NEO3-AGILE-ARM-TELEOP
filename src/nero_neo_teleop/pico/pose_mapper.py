@@ -218,18 +218,6 @@ def rpy_to_matrix(rpy: np.ndarray) -> np.ndarray:
     )
 
 
-def matrix_to_rpy(rotation: np.ndarray) -> np.ndarray:
-    matrix = np.asarray(rotation, dtype=np.float64)
-    pitch = float(np.arctan2(-matrix[2, 0], np.hypot(matrix[0, 0], matrix[1, 0])))
-    if abs(np.cos(pitch)) > 1e-7:
-        roll = float(np.arctan2(matrix[2, 1], matrix[2, 2]))
-        yaw = float(np.arctan2(matrix[1, 0], matrix[0, 0]))
-    else:
-        roll = 0.0
-        yaw = float(np.arctan2(-matrix[0, 1], matrix[1, 1]))
-    return np.asarray([roll, pitch, yaw])
-
-
 def controller_pose(state: dict) -> Pose:
     return Pose(
         position=np.asarray([state["px"], state["py"], state["pz"]], dtype=np.float64),

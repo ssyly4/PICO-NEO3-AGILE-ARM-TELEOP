@@ -130,20 +130,27 @@ Home 本身就是实机运动。现场 Home 不同时，只在重新测量后使
 
 ## 6. 录制 LeRobot v3 数据
 
-所有任务共用一个录制入口。先预览最终配置：
+数采只有两个入口，参数名称保持一致：
+
+| 入口 | 用途 |
+|---|---|
+| `scripts/recording/record_single.sh` | 单右臂、世界相机和右腕相机 |
+| `scripts/recording/record_dual.sh` | 双臂、世界相机和左右腕相机 |
+
+单臂数采：
 
 ```bash
-./scripts/recording/run_recording.sh \
-  --task "fold the towel" \
-  --dataset nero_towel_fullflow_v1 \
+./scripts/recording/record_single.sh \
+  --task "pick up the object and place it into the target area" \
+  --dataset nero_single_task_v1 \
   --episodes 50 \
-  --auto-stop off
+  --execute
 ```
 
-确认数据目录、三路相机角色、episode 数和 action 来源后执行：
+双臂数采：
 
 ```bash
-./scripts/recording/run_recording.sh \
+./scripts/recording/record_dual.sh \
   --task "fold the towel" \
   --dataset nero_towel_fullflow_v1 \
   --episodes 50 \
@@ -152,10 +159,10 @@ Home 本身就是实机运动。现场 Home 不同时，只在重新测量后使
   --execute
 ```
 
-录制器会：
+两个入口都会：
 
-1. 检查双 CAN 和三路相机。
-2. 双臂 Home 后启动托管遥操。
+1. 只检查任务需要的 CAN 和相机。
+2. 对参与任务的机械臂执行 Home，并启动托管遥操。
 3. 按 Enter 准备，检测到运动后开始记录。
 4. 每集结束后选择保存或丢弃。
 5. 保存后自动 Home，继续下一集。

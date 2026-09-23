@@ -59,7 +59,13 @@ IK 每个 tick 都重新读取 CAN 实测关节。`SE(3).log6` 计算末端误�
 ## 数采调用链
 
 ```text
-scripts/recording/run_recording.sh
+scripts/recording/record_single.sh
+  -> 单右臂 CAN 与两路相机预检
+  -> single_home
+  -> 启动托管单臂遥操
+  -> single_arm_lerobot_recorder.main()
+
+scripts/recording/record_dual.sh
   -> CAN 与相机预检
   -> dual_home
   -> 启动托管双臂遥操
@@ -85,6 +91,7 @@ scripts/recording/run_recording.sh
 | `robot/nero_io.py` | SDK 反馈和 CPV 辅助边界 |
 | `robot/home_config.py` | 左右 Home 和环境覆盖 |
 | `recording/action_command_stream.py` | 已发送 action 的进程间传输 |
+| `recording/single_arm_lerobot_recorder.py` | 两相机单右臂 LeRobot v3 录制器 |
 | `recording/bimanual_lerobot_recorder.py` | 三相机双臂 LeRobot v3 录制器 |
 
 ## 配置优先级

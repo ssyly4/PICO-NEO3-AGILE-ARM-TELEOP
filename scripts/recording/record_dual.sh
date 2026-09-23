@@ -11,7 +11,7 @@ PYTHON="$NERO_LEROBOT_PYTHON"
 usage() {
   cat <<'EOF'
 用法：
-  run_recording.sh --task TEXT --dataset NAME [options]
+  record_dual.sh --task TEXT --dataset NAME [options]
 
 必填参数：
   --task TEXT                  每帧保存的自然语言任务标签。

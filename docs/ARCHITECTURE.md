@@ -1,28 +1,99 @@
-# 系统架构
+# 系统架构与代码调用链
 
-## 实时遥操链路
+本文档只说明当前正式路径。历史实验和 VLA 训练不在本仓库。
 
-1. Unity 通过 OpenXR 读取头显和手柄状态，客户端按目标 60 Hz 向主机 UDP `50150` 发送二进制快照。
-2. `pico_input.py` 解包并检查时序；双臂时，`udp_fanout.py` 把输入分发到左右控制进程。
-3. `pose_mapper.py` 根据 Grip 建立离合锚点，将手柄的相对位姿映射到 NERO 基坐标系。
-4. `servo_v3_controller.py` 对目标位姿滤波、限制目标领先量，并读取 CAN 实测关节位置。
-5. `servo_v3_core.py` 使用 Pinocchio 正运动学、雅可比和自适应阻尼速度级 IK，计算七关节期望速度及近似零空间的限位回避速度。
-6. `FiniteLeadCommandFollower` 限制关节速度、加速度和反馈领先量；CPV 发送前再次限制单帧关节步长。
-7. `nero_vla.cpv_backend` 与 `pyAgxArm` 通过 SocketCAN 向 NERO 发送 CPV 位置命令。
+## 实时遥操调用链
 
-这是闭环链路：每个控制 tick 重新读取 CAN 状态，不把 PICO 位移直接当成关节角。
-输入过期或跟踪丢失时保持当前命令，并在恢复后重新锚定。
+```text
+scripts/control/run_dual_servo_v3_experiment.sh
+  ├─ scripts/common.sh                         读取 .env
+  ├─ scripts/can/ensure_can_interface.sh       绑定左右 SocketCAN
+  ├─ nero_neo_teleop.pico.udp_fanout           :50150 -> :50151/:50152
+  ├─ nero_neo_teleop.robot.dual_home            可选双臂 Home
+  └─ 两个 servo_v3_controller 进程
+       ├─ left  / UDP :50151 / can_left
+       └─ right / UDP :50152 / can_right
+```
 
-## 数采链路
+Shell 入口只负责配置、硬件准备和进程生命周期。实时控制主程序是
+`src/nero_neo_teleop/control/servo_v3_controller.py`。
 
-录制器以 30 Hz 采样双臂 CAN 反馈和三路相机最近的有效帧。
-在 `controller_command` 模式下，两侧控制器通过 Unix 数据报发布**已发送的受保护关节目标**及单调时间戳；
-录制器按时间匹配后写入 LeRobot v3 的 observation、action、图像、时间戳、任务与 episode 元数据。
-`controller_command` 是已发送命令，不等同于电机实际到达的位置；CAN 反馈另行记录。
-action 来源由 `scripts/recording/run_recording.sh` 的 `--action-source` 参数指定。
+### PICO 客户端
 
-## 配置和项目边界
+```text
+PicoControllerProbe.Update()
+  -> Unity XR InputDevice / CommonUsages
+  -> PicoInputPacket.LatestPacket
+  -> PicoUdpSender.Update()
+  -> PicoUdpSender.SenderLoop() 按目标 60 Hz 发送 UDP
+```
 
-机器相关路径、CAN USB 拓扑和相机角色写在不入库的 `.env` 中，由 `scripts/common.sh` 加载。
-`runtime.py` 提供 Python 侧默认路径。APK、日志存入 `artifacts/`；数据集存于仓库外。
-机械臂 SDK、URDF、Pinocchio、LeRobot 环境和 PICO OpenXR 包是外部依赖。
+| 文件 | 职责 |
+|---|---|
+| `PicoControllerProbe.cs` | 读取头显、手柄位姿、速度和按键 |
+| `PicoInputPacket.cs` | 定义一帧输入快照 |
+| `PicoUdpSender.cs` | 编码 `NQ01` 二进制报文并发往主机 |
+
+PICO 端不计算机械臂坐标、IK 或关节指令。
+
+### 主机每个控制 tick
+
+```text
+PicoUdpStream 解包与时序检查
+  -> head_yaw_world_to_view / transform_state_to_view
+  -> ClutchedPoseMapper             Grip 锚定和相对位姿
+  -> PoseLowPassFilter              位置与 SO(3) 低通
+  -> bounded_pose_target            限制目标领先 TCP
+  -> PinocchioVelocityServo.pose    CAN 关节反馈 FK
+  -> PinocchioVelocityServo.solve   自适应 DLS + 零空间限位回避
+  -> FiniteLeadCommandFollower      限关节速度、加速度与领先量
+  -> bounded_transport_step         限制单个 CPV tick 步长
+  -> NeroCpvPositionBackend.send
+  -> pyAgxArm -> SocketCAN -> NERO
+```
+
+IK 每个 tick 都重新读取 CAN 实测关节。`SE(3).log6` 计算末端误差，Pinocchio 提供 FK 和 LOCAL Jacobian，最小奇异值决定 DLS 阻尼，`I - J#J` 投影关节限位 barrier 梯度。PICO delta 只表示人的运动意图，不会直接当成关节角。
+
+输入过期、跟踪丢失或 Grip 松开时，控制器保持当前指令并在恢复后重新锚定。
+
+## 数采调用链
+
+```text
+scripts/recording/run_recording.sh
+  -> CAN 与相机预检
+  -> dual_home
+  -> 启动托管双臂遥操
+  -> bimanual_lerobot_recorder.main()
+       ├─ NeroCanStateSource       双臂 CAN 状态缓存
+       ├─ CameraReader             三路最新图像缓存
+       ├─ ArmCommandReceiver       已发送指令与单调时间戳
+       ├─ take_sample() @ 30 Hz
+       └─ LeRobotDataset.add_frame/save_episode
+```
+
+`controller_command` 模式下，左右遥操进程用 Unix 数据报发布已经通过 IK、follower 和 CPV 限制的关节目标。录制器根据单调时间戳匹配指令、CAN 反馈和三路最新相机帧，写入 observation、action、task 和 episode 元数据。
+
+## 核心源码
+
+| 路径 | 职责 |
+|---|---|
+| `pico/pico_input.py` | UDP 解码、时序、最新快照 |
+| `pico/pose_mapper.py` | 坐标转换、Grip 离合锚定、平移和姿态增益 |
+| `control/servo_v3_controller.py` | 遥操状态机和实时主循环 |
+| `control/servo_v3_core.py` | 低通滤波、FK、DLS IK、零空间和 follower |
+| `control/gripper.py` | Trigger 到夹爪指令 |
+| `robot/nero_io.py` | SDK 反馈和 CPV 辅助边界 |
+| `robot/home_config.py` | 左右 Home 和环境覆盖 |
+| `recording/action_command_stream.py` | 已发送 action 的进程间传输 |
+| `recording/bimanual_lerobot_recorder.py` | 三相机双臂 LeRobot v3 录制器 |
+
+## 配置优先级
+
+```text
+命令行参数
+  > 当前 Shell 环境变量
+  > 仓库根目录 .env
+  > scripts/common.sh 与 Python 默认值
+```
+
+硬件拓扑和本机路径只写入 `.env`。任务文本、数据集名和 episode 数由统一录制入口的命令行参数提供，不再为任务复制 Shell 脚本。

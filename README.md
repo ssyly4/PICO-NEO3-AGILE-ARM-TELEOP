@@ -56,6 +56,7 @@ CAN 反馈 + 三路相机 + 实际执行指令 -> LeRobot v3 数据集
 
 交接文档：
 
+- [端到端 VLA 命令行全流程](https://github.com/ssyly4/NERO_VLA_training/blob/main/docs/END_TO_END_VLA_WORKFLOW.zh-CN.md)：从 PICO 数采到训练和实机执行的统一命令。
 - [安装与依赖](docs/INSTALLATION.md)：两套 Python 环境、外部 SDK、Unity 与验证命令。
 - [核心代码与调用链](docs/CODE_GUIDE.zh-CN.md)：入口、进程、核心类和逐 tick 执行顺序。
 - [运行入口](docs/RUNTIME.md)：日常命令和 Python 包职责。
